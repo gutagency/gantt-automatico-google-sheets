@@ -366,7 +366,7 @@ var TAREAS_MERCADO_PAGO = {
 };
 
 // ============================================
-// OBTENER MARCA SELECCIONADA DESDE INSTRUCCIONES (D10 / F10)
+// OBTENER MARCA SELECCIONADA DESDE INSTRUCCIONES (C11=ML / C12=MP / C13=Estándar)
 // ============================================
 
 function obtenerMarcaSeleccionada() {
@@ -375,8 +375,9 @@ function obtenerMarcaSeleccionada() {
   
   if (!hojaInstrucciones) return 'mercado_libre';
   
-  var checkMP = hojaInstrucciones.getRange('F10').getValue();
-  var checkEstandar = hojaInstrucciones.getRange('H10').getValue();
+  // Marca: checkboxes en columna C, filas 11 (ML), 12 (MP), 13 (Estándar)
+  var checkMP = hojaInstrucciones.getRange('C12').getValue();
+  var checkEstandar = hojaInstrucciones.getRange('C13').getValue();
   
   if (checkMP === true || checkMP === 'TRUE' || checkMP === 'true') return 'mercado_pago';
   if (checkEstandar === true || checkEstandar === 'TRUE' || checkEstandar === 'true') return 'estandar';
@@ -2694,24 +2695,25 @@ function onEdit(e) {
   var hoja = e.range.getSheet();
   var nombreHoja = hoja.getName();
   
-  // Detectar cambio de checkbox de marca en Instrucciones (fila 10, col D o F)
+  // Detectar cambio de checkbox de marca en Instrucciones.
+  // Marca: columna C (3), filas 11 (ML), 12 (MP), 13 (Estándar).
   if (nombreHoja === CONFIG.HOJA_INSTRUCCIONES) {
     var filaEdit = e.range.getRow();
     var colEdit = e.range.getColumn();
     
-    if (filaEdit === 10 && (colEdit === 4 || colEdit === 6 || colEdit === 7)) {
-      // Checkboxes mutuamente excluyentes (D=ML, F=MP, G=Estándar)
+    if (colEdit === 3 && (filaEdit === 11 || filaEdit === 12 || filaEdit === 13)) {
+      // Checkboxes mutuamente excluyentes (C11=ML, C12=MP, C13=Estándar)
       var valor = e.range.getValue();
       if (valor === true) {
-        if (colEdit === 4) {
-          hoja.getRange(10, 6).setValue(false);
-          hoja.getRange(10, 7).setValue(false);
-        } else if (colEdit === 6) {
-          hoja.getRange(10, 4).setValue(false);
-          hoja.getRange(10, 7).setValue(false);
-        } else if (colEdit === 7) {
-          hoja.getRange(10, 4).setValue(false);
-          hoja.getRange(10, 6).setValue(false);
+        if (filaEdit === 11) {
+          hoja.getRange('C12').setValue(false);
+          hoja.getRange('C13').setValue(false);
+        } else if (filaEdit === 12) {
+          hoja.getRange('C11').setValue(false);
+          hoja.getRange('C13').setValue(false);
+        } else if (filaEdit === 13) {
+          hoja.getRange('C11').setValue(false);
+          hoja.getRange('C12').setValue(false);
         }
       }
       poblarTareasPredeterminadas();
