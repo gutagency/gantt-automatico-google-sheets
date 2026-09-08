@@ -1803,8 +1803,13 @@ function generarGanttInterno(feriados, excepciones) {
   // timeline INLINE (que se dibuja sobre hojaCreativo, más abajo).
   var usarTabGantt = (CONFIG.TAB_GANTT_ACTIVA === true) && !!hojaGantt;
   var hojaGanttEsTemporal = false;
+  var NOMBRE_TEMP = '__gantt_temp__';
   if (!usarTabGantt) {
-    hojaGantt = ss.insertSheet('__gantt_temp__' + new Date().getTime());
+    // Borrar cualquier hoja temporal que haya quedado colgada de una ejecución
+    // previa interrumpida, antes de crear una nueva.
+    var tempPrevia = ss.getSheetByName(NOMBRE_TEMP);
+    if (tempPrevia) { try { ss.deleteSheet(tempPrevia); } catch (e) {} }
+    hojaGantt = ss.insertSheet(NOMBRE_TEMP);
     hojaGanttEsTemporal = true;
   }
 
@@ -1834,6 +1839,7 @@ function generarGanttInterno(feriados, excepciones) {
   var todasActividades = actividadesCreativoSinFinal.concat(actividadesProduccion).concat(actividadesFinales);
   
   if (todasActividades.length === 0) {
+    if (hojaGanttEsTemporal) { try { ss.deleteSheet(hojaGantt); } catch (e) {} }
     SpreadsheetApp.getUi().alert('No hay actividades con fechas válidas para mostrar.');
     return;
   }
@@ -2175,13 +2181,7 @@ function generarGanttInterno(feriados, excepciones) {
       }
     }
   }
-
-  // Si usamos una hoja temporal (tab Gantt desactivada), la borramos: el
-  // cliente solo ve el timeline inline en la hoja de entrada.
-  if (hojaGanttEsTemporal) {
-    try { ss.deleteSheet(hojaGantt); } catch (e) {}
-  }
-
+  
   SpreadsheetApp.getUi().alert('Gantt generado correctamente.');
 }
 
