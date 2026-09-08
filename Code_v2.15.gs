@@ -148,6 +148,10 @@ var ESQUEMA_MELI = {
 // ============================================
 
 var TRADUCCIONES_PT = {
+  // Mercado Libre - Agrupadores de etapa
+  'ETAPA CREATIVA': 'ETAPA CRIATIVA',
+  'ETAPA PRODUCCION': 'ETAPA PRODUÇÃO',
+  'ETAPA PRODUCCIÓN': 'ETAPA PRODUÇÃO',
   'BRIEF': 'BRIEFING',
   'DEBRIEF': 'DEBRIEFING',
   'REUNIÓN MANAGEMENT': 'REUNIÃO MANAGEMENT',
@@ -244,6 +248,9 @@ var TRADUCCIONES_PT = {
 // ============================================
 
 var TRADUCCIONES_ES = {
+  // Mercado Libre - Agrupadores de etapa
+  'ETAPA CRIATIVA': 'ETAPA CREATIVA',
+  'ETAPA PRODUÇÃO': 'ETAPA PRODUCCION',
   'BRIEFING': 'BRIEF',
   'DEBRIEFING': 'DEBRIEF',
   'REUNIÃO MANAGEMENT': 'REUNIÓN MANAGEMENT',
@@ -419,7 +426,9 @@ function poblarTareasPredeterminadas() {
   if (!hoja) return;
   
   var marca = obtenerMarcaSeleccionada();
-  var datosMarca = (marca === 'mercado_pago') ? TAREAS_MERCADO_PAGO : TAREAS_MERCADO_LIBRE;
+  // Estándar usa el mismo set de tareas que Mercado Pago.
+  var usaSetMercadoPago = (marca === 'mercado_pago' || marca === 'estandar');
+  var datosMarca = usaSetMercadoPago ? TAREAS_MERCADO_PAGO : TAREAS_MERCADO_LIBRE;
   var idioma = obtenerIdiomaSeleccionado();
   var diccionario = (idioma === 'portugues') ? TRADUCCIONES_PT : null;
   
@@ -439,10 +448,19 @@ function poblarTareasPredeterminadas() {
     // Si cambia el agrupador, escribir la fila del agrupador
     if (tarea.agrupador !== agrupadorActual) {
       agrupadorActual = tarea.agrupador;
-      hoja.getRange(filaActual, 1).setValue(agrupadorActual);
+      // Escribir el agrupador traducido si el idioma es portugués (el valor
+      // interno agrupadorActual queda en español para la lógica de colores).
+      var agrupadorParaEscribir = agrupadorActual;
+      if (diccionario) {
+        var agrupadorUpper = agrupadorActual.toUpperCase().trim();
+        if (diccionario[agrupadorUpper]) {
+          agrupadorParaEscribir = diccionario[agrupadorUpper];
+        }
+      }
+      hoja.getRange(filaActual, 1).setValue(agrupadorParaEscribir);
       
-      // Colores del agrupador según marca
-      if (marca === 'mercado_pago') {
+      // Colores del agrupador según marca (Estándar usa el mismo esquema que Mercado Pago)
+      if (usaSetMercadoPago) {
         var normAgrup = agrupadorActual.toUpperCase().trim();
         var colorFondo, colorTexto;
         if (normAgrup === 'DESARROLLO CREATIVO') {
@@ -479,8 +497,8 @@ function poblarTareasPredeterminadas() {
       hoja.getRange(filaActual, 2).setValue(tarea.dias);
     }
     
-    // Pintar color de fondo de la tarea (para ML usa colores por tipo, para MP no se pinta)
-    if (marca !== 'mercado_pago') {
+    // Pintar color de fondo de la tarea (para ML usa colores por tipo, para MP/Estándar no se pinta)
+    if (!usaSetMercadoPago) {
       var colorTarea = obtenerColorActividad(tarea.nombre);
       if (colorTarea !== CONFIG.COLOR_CREATIVO) {
         hoja.getRange(filaActual, 1).setBackground(colorTarea);
@@ -499,8 +517,9 @@ function poblarTareasPredeterminadas() {
       .setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
   }
   
+  var nombreMarca = (marca === 'mercado_pago') ? 'Mercado Pago' : (marca === 'estandar') ? 'Estándar' : 'Mercado Libre';
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    'Tareas predeterminadas cargadas para ' + (marca === 'mercado_pago' ? 'Mercado Pago' : 'Mercado Libre') + '.',
+    'Tareas predeterminadas cargadas para ' + nombreMarca + '.',
     '✅ Listo', 5);
 }
 
@@ -1864,10 +1883,21 @@ function generarGanttInterno(feriados, excepciones) {
     fecha.setDate(fecha.getDate() + 1);
   }
   
-  var diasSemana = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
-  var diasSemanaCorto = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-  var meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  var mesesMayus = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+  // Etiquetas de fecha según idioma seleccionado en Instrucciones.
+  var idiomaGantt = obtenerIdiomaSeleccionado();
+  var esPtGantt = (idiomaGantt === 'portugues');
+  var diasSemana = esPtGantt
+    ? ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
+    : ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+  var diasSemanaCorto = esPtGantt
+    ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+    : ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  var meses = esPtGantt
+    ? ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+    : ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var mesesMayus = esPtGantt
+    ? ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
+    : ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
   
   var marca = obtenerMarcaSeleccionada();
   var esMercadoPago = (marca === 'mercado_pago');
@@ -2330,7 +2360,8 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
   if (!fechas || fechas.length === 0) return;
   
   var marca = obtenerMarcaSeleccionada();
-  var esMercadoPago = (marca === 'mercado_pago');
+  // Estándar comparte el esquema visual de Mercado Pago.
+  var esMercadoPago = (marca === 'mercado_pago' || marca === 'estandar');
   var colInicio = CONFIG.COL_TIMELINE_INICIO; // Columna H (E=Day Off oculto, F=Status, G=Responsible)
   
   // Header de fechas (mismo formato ML para ambas marcas)
@@ -2505,7 +2536,8 @@ function obtenerActividadesCreativo(hoja) {
   
   var datos = hoja.getRange(2, 1, ultimaFila - 1, 5).getValues(); // A:E
   var marca = obtenerMarcaSeleccionada();
-  var esMercadoPago = (marca === 'mercado_pago');
+  // Estándar comparte el esquema de agrupadores de Mercado Pago.
+  var esMercadoPago = (marca === 'mercado_pago' || marca === 'estandar');
   
   // Determinar sección de cada actividad según su agrupador
   var seccionActual = 'creativo';
@@ -2530,9 +2562,9 @@ function obtenerActividadesCreativo(hoja) {
           seccionActual = 'produccion';
         }
       } else {
-        if (norm === 'ETAPA CREATIVA' || norm === 'PROCESO CREATIVO') {
+        if (norm === 'ETAPA CREATIVA' || norm === 'ETAPA CRIATIVA' || norm === 'PROCESO CREATIVO') {
           seccionActual = 'creativo';
-        } else if (norm === 'ETAPA PRODUCCION' || norm === 'PRODUCTION PLANNING') {
+        } else if (norm === 'ETAPA PRODUCCION' || norm === 'ETAPA PRODUCCIÓN' || norm === 'ETAPA PRODUÇÃO' || norm === 'PRODUCTION PLANNING') {
           seccionActual = 'produccion';
         }
       }
