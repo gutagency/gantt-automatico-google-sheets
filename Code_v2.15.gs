@@ -1797,20 +1797,12 @@ function generarGanttInterno(feriados, excepciones) {
   var hojaGantt = ss.getSheetByName(CONFIG.HOJA_GANTT);
 
   // La tab "Gantt" separada está desactivada (CONFIG.TAB_GANTT_ACTIVA = false)
-  // o directamente no existe. En ese caso, todo el dibujado de la tab separada
-  // se hace sobre una hoja TEMPORAL descartable (para no tocar las decenas de
-  // escrituras a hojaGantt), que se borra al final. Lo que el cliente ve es el
-  // timeline INLINE (que se dibuja sobre hojaCreativo, más abajo).
+  // o directamente no existe. En ese caso NO se crea ninguna hoja: todas las
+  // escrituras a hojaGantt se redirigen a un objeto "no-op" (no hace nada), y
+  // lo único que se genera es el timeline INLINE (sobre hojaCreativo, más abajo).
   var usarTabGantt = (CONFIG.TAB_GANTT_ACTIVA === true) && !!hojaGantt;
-  var hojaGanttEsTemporal = false;
-  var NOMBRE_TEMP = '__gantt_temp__';
   if (!usarTabGantt) {
-    // Borrar cualquier hoja temporal que haya quedado colgada de una ejecución
-    // previa interrumpida, antes de crear una nueva.
-    var tempPrevia = ss.getSheetByName(NOMBRE_TEMP);
-    if (tempPrevia) { try { ss.deleteSheet(tempPrevia); } catch (e) {} }
-    hojaGantt = ss.insertSheet(NOMBRE_TEMP);
-    hojaGanttEsTemporal = true;
+    hojaGantt = crearHojaNoOp();
   }
 
   var actividadesCreativo = obtenerActividadesCreativo(hojaCreativo);
@@ -1839,7 +1831,6 @@ function generarGanttInterno(feriados, excepciones) {
   var todasActividades = actividadesCreativoSinFinal.concat(actividadesProduccion).concat(actividadesFinales);
   
   if (todasActividades.length === 0) {
-    if (hojaGanttEsTemporal) { try { ss.deleteSheet(hojaGantt); } catch (e) {} }
     SpreadsheetApp.getUi().alert('No hay actividades con fechas válidas para mostrar.');
     return;
   }
@@ -2183,6 +2174,54 @@ function generarGanttInterno(feriados, excepciones) {
   }
   
   SpreadsheetApp.getUi().alert('Gantt generado correctamente.');
+}
+
+// Objeto "no-op" que imita la API de una hoja para redirigir las escrituras
+// cuando la tab "Gantt" está desactivada. Ningún método hace nada real, así
+// no se crea ninguna hoja (ni temporal) y solo queda el timeline inline.
+function crearHojaNoOp() {
+  var rangoNoOp = {
+    setValue: function () { return rangoNoOp; },
+    setValues: function () { return rangoNoOp; },
+    setBackground: function () { return rangoNoOp; },
+    setBackgrounds: function () { return rangoNoOp; },
+    setFontColor: function () { return rangoNoOp; },
+    setFontColors: function () { return rangoNoOp; },
+    setFontWeight: function () { return rangoNoOp; },
+    setFontSize: function () { return rangoNoOp; },
+    setFontLine: function () { return rangoNoOp; },
+    setFontStyle: function () { return rangoNoOp; },
+    setHorizontalAlignment: function () { return rangoNoOp; },
+    setVerticalAlignment: function () { return rangoNoOp; },
+    setWrap: function () { return rangoNoOp; },
+    setNumberFormat: function () { return rangoNoOp; },
+    setBorder: function () { return rangoNoOp; },
+    merge: function () { return rangoNoOp; },
+    getValue: function () { return ''; },
+    getValues: function () { return [['']]; },
+    clearContent: function () { return rangoNoOp; },
+    clearFormat: function () { return rangoNoOp; }
+  };
+  var hojaNoOp = {
+    clear: function () { return hojaNoOp; },
+    clearContents: function () { return hojaNoOp; },
+    clearFormats: function () { return hojaNoOp; },
+    getRange: function () { return rangoNoOp; },
+    getLastRow: function () { return 0; },
+    getLastColumn: function () { return 0; },
+    getMaxRows: function () { return 1000; },
+    getMaxColumns: function () { return 26; },
+    setColumnWidth: function () { return hojaNoOp; },
+    setColumnWidths: function () { return hojaNoOp; },
+    setRowHeight: function () { return hojaNoOp; },
+    setFrozenRows: function () { return hojaNoOp; },
+    setFrozenColumns: function () { return hojaNoOp; },
+    hideColumns: function () { return hojaNoOp; },
+    hideRows: function () { return hojaNoOp; },
+    getName: function () { return '__noop__'; },
+    activate: function () { return hojaNoOp; }
+  };
+  return hojaNoOp;
 }
 
 // ============================================
