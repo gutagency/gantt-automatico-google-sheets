@@ -75,7 +75,7 @@
 // ============================================
 
 var CONFIG = {
-  HOJA_CREATIVO: 'Entrada Proceso Creativo',
+  HOJA_CREATIVO: 'Gantt GUT',
   HOJA_PRODUCCION: 'Entrada Producción',
   HOJA_FERIADOS: 'Feriados',
   HOJA_GANTT: 'Gantt',
@@ -543,8 +543,8 @@ var PARES_INSTRUCCIONES = [
     pt: "Cidade do México"
   },
   {
-    es: "Paso 3 - Seleccionar idioma de las tareas en Entrada Proceso Creativo",
-    pt: "Passo 3 - Selecionar idioma das tarefas em Entrada Proceso Creativo"
+    es: "Paso 3 - Seleccionar idioma de las tareas en Gantt GUT",
+    pt: "Passo 3 - Selecionar idioma das tarefas em Gantt GUT"
   },
   {
     es: "Español",
@@ -3899,7 +3899,7 @@ function instalarTriggerSiNoExiste() {
 // ============================================
 
 var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Google Sheets. Respondé siempre en español, EXCEPTO si el usuario te escribe en portugués — en ese caso respondé en portugués. Sé directo y ejecutá sin preguntar de más.\n\n' +
-  'TABLA: La hoja "Entrada Proceso Creativo" tiene columnas: A=Actividad, B=Días, C=Fecha Inicio, D=Fecha Fin, E=¿Se trabaja en Día Off?\n\n' +
+  'TABLA: La hoja "Gantt GUT" tiene columnas: A=Actividad, B=Días, C=Fecha Inicio, D=Fecha Fin\n\n' +
   'ACCIONES QUE PODÉS EJECUTAR (respondé SIEMPRE con JSON cuando el usuario pide una acción):\n\n' +
   '1. moverTareaAFecha — Mover una tarea a una fecha específica\n' +
   '   Ejemplo usuario: "Mové BRIEF al lunes 06 de julio"\n' +
@@ -3961,7 +3961,7 @@ var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Goo
   '- CASCADA DESDE CURSOR: Desde el menú del sheet, se ubica el cursor en una celda de Fecha Inicio (col C) o Fecha Fin (col D) de una tarea. Si está en col C, cascadea hacia arriba. Si está en col D, cascadea hacia abajo. Respeta la fila del cursor como ancla fija.\n';
 
 var SYSTEM_PROMPT_PT = 'Você é um assistente que executa ações em um Gantt no Google Sheets. Responda sempre em português. Se o usuário escrever em espanhol, responda em espanhol. Seja direto e execute sem perguntar demais.\n\n' +
-  'TABELA: A aba "Entrada Proceso Creativo" tem colunas: A=Atividade, B=Dias, C=Data Início, D=Data Fim, E=¿Se trabaja en Día Off?\n\n' +
+  'TABELA: A aba "Gantt GUT" tem colunas: A=Atividade, B=Dias, C=Data Início, D=Data Fim\n\n' +
   'AÇÕES QUE VOCÊ PODE EXECUTAR (responda SEMPRE com JSON quando o usuário pede uma ação):\n\n' +
   '1. moverTareaAFecha — Mover uma tarefa para uma data específica\n' +
   '   Exemplo: "Mova BRIEFING para segunda 06 de julho"\n' +
