@@ -1385,7 +1385,10 @@ function generarGantt() {
   var hojaGantt = ss.getSheetByName(CONFIG.HOJA_GANTT);
   var feriados = obtenerFeriados();
   
-  if (!hojaGantt) {
+  // La tab "Gantt" separada solo se exige cuando está activada. Si está
+  // desactivada (CONFIG.TAB_GANTT_ACTIVA = false), el Gantt se genera únicamente
+  // inline y no hace falta que exista la hoja "Gantt".
+  if (CONFIG.TAB_GANTT_ACTIVA === true && !hojaGantt) {
     SpreadsheetApp.getUi().alert('Error: No se encontró la hoja "' + CONFIG.HOJA_GANTT + '"');
     return;
   }
