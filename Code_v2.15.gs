@@ -1688,35 +1688,69 @@ function generarGanttInlineMeli() {
     fecha.setDate(fecha.getDate() + 1);
   }
 
-  var meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  // Meses abreviados en portugués e iniciales de días de semana en portugués
+  // (Domingo, Segunda, Terça, Quarta, Quinta, Sexta, Sábado)
+  var mesesPT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var diasSemanaCortoPT = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
   var colInicio = ESQUEMA_MELI.COL_TIMELINE_INICIO;
   var filaIni = ESQUEMA_MELI.FILA_INICIO_TAREAS;
   var ultimaFila = hoja.getLastRow();
 
-  // Limpiar el área del timeline (desde columna I hacia la derecha)
+  // Header de 3 filas: fila 5 = mes (mergeado), fila 6 = número de día,
+  // fila 7 = inicial del día de semana (alineada con el header de la tabla).
+  var filaMes = filaIni - 3;   // 5
+  var filaNum = filaIni - 2;   // 6
+  var filaDia = filaIni - 1;   // 7
+
+  // Limpiar el área del timeline (desde columna I hacia la derecha), incluyendo el header
   var ultimaColumna = hoja.getLastColumn();
   if (ultimaColumna >= colInicio) {
-    hoja.getRange(1, colInicio, ultimaFila, ultimaColumna - colInicio + 1).clearContent();
-    hoja.getRange(1, colInicio, ultimaFila, ultimaColumna - colInicio + 1).clearFormat();
+    hoja.getRange(filaMes, colInicio, ultimaFila - filaMes + 1, ultimaColumna - colInicio + 1).clearContent();
+    hoja.getRange(filaMes, colInicio, ultimaFila - filaMes + 1, ultimaColumna - colInicio + 1).clearFormat();
   }
 
-  // Header de fechas en la fila de encabezados (fila 7 = filaIni - 1)
-  var filaHeader = filaIni - 1;
-  var headerFechas = [];
+  // Fila 6: número de día. Fila 7: inicial del día de semana.
+  var filaNumVals = [];
+  var filaDiaVals = [];
   for (var j = 0; j < fechas.length; j++) {
     var f = fechas[j];
-    headerFechas.push(f.getDate() + ' ' + meses[f.getMonth()]);
+    filaNumVals.push(f.getDate());
+    filaDiaVals.push(diasSemanaCortoPT[f.getDay()]);
   }
-  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setValues([headerFechas]);
-  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setBackground(CONFIG.COLOR_HEADER);
-  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setFontColor(CONFIG.COLOR_HEADER_TEXT);
-  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setFontWeight('bold');
-  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setHorizontalAlignment('center');
+  hoja.getRange(filaNum, colInicio, 1, filaNumVals.length).setValues([filaNumVals]);
+  hoja.getRange(filaDia, colInicio, 1, filaDiaVals.length).setValues([filaDiaVals]);
 
-  // Pintar findes/feriados de fondo
+  // Fila 5: mes mergeado por bloque de mes
+  var mesInicioIdx = 0;
+  var mesActual = fechas[0].getMonth();
+  for (var jm = 1; jm <= fechas.length; jm++) {
+    var esCambioMes = (jm === fechas.length) || (fechas[jm].getMonth() !== mesActual);
+    if (esCambioMes) {
+      var colMes = mesInicioIdx + colInicio;
+      var numCols = jm - mesInicioIdx;
+      if (numCols > 1) {
+        hoja.getRange(filaMes, colMes, 1, numCols).merge();
+      }
+      hoja.getRange(filaMes, colMes).setValue(mesesPT[mesActual]);
+      hoja.getRange(filaMes, colMes).setHorizontalAlignment('center');
+      if (jm < fechas.length) {
+        mesActual = fechas[jm].getMonth();
+        mesInicioIdx = jm;
+      }
+    }
+  }
+
+  // Formato del header (3 filas)
+  hoja.getRange(filaMes, colInicio, 3, fechas.length).setBackground(CONFIG.COLOR_HEADER);
+  hoja.getRange(filaMes, colInicio, 3, fechas.length).setFontColor(CONFIG.COLOR_HEADER_TEXT);
+  hoja.getRange(filaMes, colInicio, 3, fechas.length).setFontWeight('bold');
+  hoja.getRange(filaMes, colInicio, 3, fechas.length).setHorizontalAlignment('center');
+  hoja.getRange(filaMes, colInicio, 3, fechas.length).setFontSize(8);
+
+  // Pintar findes/feriados de fondo (desde la fila del número de día hacia abajo)
   for (var k = 0; k < fechas.length; k++) {
     if (esFeriado(fechas[k], feriados) || esFinDeSemana(fechas[k])) {
-      hoja.getRange(filaHeader, k + colInicio, ultimaFila - filaHeader + 1, 1).setBackground(CONFIG.COLOR_FINDE_BARRA);
+      hoja.getRange(filaNum, k + colInicio, ultimaFila - filaNum + 1, 1).setBackground(CONFIG.COLOR_FINDE_BARRA);
     }
   }
 
