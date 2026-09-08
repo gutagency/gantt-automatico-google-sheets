@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+  <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+    h1 { color: #FFD700; margin-bottom: 5px; font-size: 24px; }
+    .subtitle { color: #aaa; margin-bottom: 20px; font-size: 14px; }
+    
+    .controls { display: flex; gap: 15px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    .controls select, .controls button {
+      padding: 8px 12px; border: 1px solid #444; border-radius: 4px;
+      background: #2a2a4a; color: #eee; font-size: 13px; cursor: pointer;
+    }
+    .controls button { background: #FFD700; color: #000; font-weight: bold; border: none; }
+    .controls button:hover { background: #e6c200; }
+    
+    #gantt-container { height: 500px; background: #fff; border-radius: 8px; overflow: hidden; }
+    .loading { text-align: center; padding: 40px; color: #aaa; }
+    .status { margin-top: 10px; font-size: 12px; color: #aaa; }
+    
+    /* Fines de semana en gris */
+    .weekend { background: #e8e8e8 !important; }
+    .gantt_task_cell.weekend { background: #e8e8e8 !important; }
+    .gantt_cell.weekend { background: #e8e8e8 !important; }
+  </style>
+</head>
+<body>
+  <h1>📊 Gantt Interactivo</h1>
+  <p class="subtitle">Arrastrá las barras para mover tareas. Los cambios se guardan en el sheet.</p>
+  
+  <div class="controls">
+    <div>
+      <label style="font-size:12px; color:#aaa;">Proyecto:</label><br>
+      <select id="selectProyecto" onchange="cargarProyecto()">
+        <option value="">Seleccionar...</option>
+      </select>
+    </div>
+    <div>
+      <button onclick="gantt.ext.zoom.zoomIn()">+ Zoom In</button>
+      <button onclick="gantt.ext.zoom.zoomOut()">- Zoom Out</button>
+    </div>
+  </div>
+  
+  <div id="gantt-container"></div>
+  <div class="status" id="status"></div>
+
+  <script>
+    var currentSpreadsheetId = '';
+    
+    // Configurar DHTMLX Gantt
+    gantt.config.date_format = "%Y-%m-%d %H:%i";
+    gantt.config.scale_unit = "day";
+    gantt.config.date_scale = "%d %M";
+    gantt.config.min_column_width = 30;
+    gantt.config.scale_height = 50;
+    gantt.config.row_height = 28;
+    gantt.config.drag_resize = true;
+    gantt.config.drag_move = true;
+    gantt.config.drag_progress = false;
+    gantt.config.columns = [
+      { name: "text", label: "Actividad", width: 200, tree: false }
+    ];
+    
+    // Fines de semana visibles pero barras los saltan
+    gantt.config.work_time = true;
+    gantt.config.skip_off_time = false; // Mostrar fines de semana en la grilla
+    gantt.config.correct_work_time = true; // Al mover, ajustar a días hábiles
+    gantt.setWorkTime({ day: 0, hours: false }); // Domingo no laboral
+    gantt.setWorkTime({ day: 6, hours: false }); // Sábado no laboral
+    gantt.setWorkTime({ day: 1, hours: true });
+    gantt.setWorkTime({ day: 2, hours: true });
+    gantt.setWorkTime({ day: 3, hours: true });
+    gantt.setWorkTime({ day: 4, hours: true });
+    gantt.setWorkTime({ day: 5, hours: true });
+    
+    // Pintar columnas de finde de gris
+    gantt.templates.timeline_cell_class = function(task, date) {
+      if (date.getDay() === 0 || date.getDay() === 6) {
+        return "weekend";
+      }
+      return "";
+    };
+    
+    // Zoom levels
+    var zoomConfig = {
+      levels: [
+        { name: "day", scale_height: 60, min_column_width: 30,
+          scales: [
+            { unit: "month", step: 1, format: "%F %Y" },
+            { unit: "day", step: 1, format: "%d %D" }
+          ]
+        },
+        { name: "week", scale_height: 50, min_column_width: 50,
+          scales: [
+            { unit: "month", step: 1, format: "%F %Y" },
+            { unit: "week", step: 1, format: "Sem %W" }
+          ]
+        }
+      ]
+    };
+    gantt.ext.zoom.init(zoomConfig);
+    gantt.ext.zoom.setLevel("day");
+    
+    // Evento: al mover/redimensionar una barra → guardar en sheet
+    gantt.attachEvent("onAfterTaskDrag", function(id, mode, e) {
+      var task = gantt.getTask(id);
+      var startStr = formatDate(task.start_date);
+      var endStr = formatDate(task.end_date);
+      
+      document.getElementById('status').textContent = '💾 Guardando ' + task.text + '...';
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          if (result.ok) {
+            document.getElementById('status').textContent = '✅ ' + task.text + ' actualizada (' + result.dias + ' días hábiles)';
+          } else {
+            document.getElementById('status').textContent = '❌ Error: ' + result.error;
+          }
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('status').textContent = '❌ Error: ' + err.message;
+        })
+        .guardarCambioFecha(currentSpreadsheetId, task.fila, startStr, endStr);
+    });
+    
+    gantt.init("gantt-container");
+    
+    // Cargar lista de proyectos
+    window.onload = function() {
+      google.script.run
+        .withSuccessHandler(function(proyectos) {
+          var select = document.getElementById('selectProyecto');
+          for (var i = 0; i < proyectos.length; i++) {
+            var opt = document.createElement('option');
+            opt.value = proyectos[i].spreadsheetId;
+            opt.textContent = proyectos[i].nombre;
+            select.appendChild(opt);
+          }
+        })
+        .obtenerProyectosActivos();
+    };
+    
+    function cargarProyecto() {
+      var select = document.getElementById('selectProyecto');
+      currentSpreadsheetId = select.value;
+      if (!currentSpreadsheetId) return;
+      
+      document.getElementById('status').textContent = '⏳ Cargando...';
+      
+      // Cargar feriados y marcarlos como no laborables
+      google.script.run
+        .withSuccessHandler(function(feriados) {
+          for (var i = 0; i < feriados.length; i++) {
+            var parts = feriados[i].split('-');
+            var fecha = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+            gantt.setWorkTime({ date: fecha, hours: false });
+          }
+        })
+        .obtenerFeriadosParaHTML(currentSpreadsheetId);
+      
+      // Cargar tareas
+      google.script.run
+        .withSuccessHandler(function(tareas) {
+          gantt.clearAll();
+          var data = { data: [] };
+          for (var i = 0; i < tareas.length; i++) {
+            var t = tareas[i];
+            data.data.push({
+              id: i + 1,
+              text: t.name,
+              start_date: t.start,
+              end_date: t.end,
+              fila: t.fila
+            });
+          }
+          gantt.parse(data);
+          document.getElementById('status').textContent = tareas.length + ' tareas cargadas.';
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('status').textContent = '❌ Error: ' + err.message;
+        })
+        .obtenerTareasParaGantt(currentSpreadsheetId);
+    }
+    
+    function formatDate(date) {
+      var d = new Date(date);
+      return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+    }
+  </script>
+</body>
+</html>

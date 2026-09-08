@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+    h1 { color: #FFD700; margin-bottom: 5px; font-size: 24px; }
+    .subtitle { color: #aaa; margin-bottom: 20px; font-size: 14px; }
+    
+    .controls { display: flex; gap: 15px; margin-bottom: 15px; align-items: center; }
+    .controls select, .controls button {
+      padding: 8px 12px; border: 1px solid #444; border-radius: 4px;
+      background: #2a2a4a; color: #eee; font-size: 13px; cursor: pointer;
+    }
+    .controls button { background: #FFD700; color: #000; font-weight: bold; border: none; }
+    .controls button:hover { background: #e6c200; }
+    .btn-save { background: #4CAF50 !important; color: #fff !important; }
+    
+    .grid-wrapper { overflow-x: auto; background: #fff; border-radius: 8px; padding: 10px; }
+    
+    table { border-collapse: collapse; font-size: 11px; }
+    th { background: #333; color: #fff; padding: 4px 2px; text-align: center; min-width: 28px; position: sticky; top: 0; }
+    th.task-header { text-align: left; min-width: 180px; padding-left: 8px; }
+    td { padding: 3px 2px; text-align: center; min-width: 28px; height: 24px; border: 1px solid #e0e0e0; cursor: pointer; }
+    td.task-name { text-align: left; min-width: 180px; padding-left: 8px; font-weight: bold; cursor: default; background: #f9f9f9; }
+    
+    td.weekend { background: #e0e0e0 !important; cursor: not-allowed; }
+    td.feriado { background: #d3d3d3 !important; cursor: not-allowed; }
+    td.active { background: #F4A460; }
+    td.active-click { background: #4CAF50; }
+    
+    th.weekend-header { background: #666; }
+    
+    .loading { text-align: center; padding: 40px; color: #666; }
+    .status { margin-top: 10px; font-size: 12px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <h1>📋 Gantt Grid — Edición por día</h1>
+  <p class="subtitle">Clickeá celdas para marcar/desmarcar días de trabajo. Guardá cuando termines.</p>
+  
+  <div class="controls">
+    <select id="selectProyecto" onchange="cargarProyecto()">
+      <option value="">Seleccionar proyecto...</option>
+    </select>
+    <button class="btn-save" onclick="guardar()">💾 Guardar cambios</button>
+  </div>
+  
+  <div class="grid-wrapper" id="grid-container">
+    <div class="loading">Seleccioná un proyecto</div>
+  </div>
+  <div class="status" id="status"></div>
+
+  <script>
+    var currentSpreadsheetId = '';
+    var gridData = null; // { tareas, fechaMin, fechaMax, feriados }
+    var diasActivos = {}; // { "fila_colIdx": true/false }
+    var fechasArray = []; // array de Date
+    
+    window.onload = function() {
+      google.script.run.withSuccessHandler(function(proyectos) {
+        var select = document.getElementById('selectProyecto');
+        for (var i = 0; i < proyectos.length; i++) {
+          var opt = document.createElement('option');
+          opt.value = proyectos[i].spreadsheetId;
+          opt.textContent = proyectos[i].nombre;
+          select.appendChild(opt);
+        }
+      }).obtenerProyectosActivos();
+    };
+    
+    function cargarProyecto() {
+      currentSpreadsheetId = document.getElementById('selectProyecto').value;
+      if (!currentSpreadsheetId) return;
+      
+      document.getElementById('grid-container').innerHTML = '<div class="loading">⏳ Cargando...</div>';
+      
+      google.script.run.withSuccessHandler(function(data) {
+        gridData = data;
+        renderGrid(data);
+      }).withFailureHandler(function(err) {
+        document.getElementById('grid-container').innerHTML = '<div class="loading" style="color:red;">Error: ' + err.message + '</div>';
+      }).obtenerDatosParaGrilla(currentSpreadsheetId);
+    }
+    
+    function renderGrid(data) {
+      if (!data.tareas || data.tareas.length === 0 || !data.fechaMin) {
+        document.getElementById('grid-container').innerHTML = '<div class="loading">No hay tareas con fechas</div>';
+        return;
+      }
+      
+      // Generar array de fechas
+      var parts1 = data.fechaMin.split('T')[0].split('-');
+      var parts2 = data.fechaMax.split('T')[0].split('-');
+      var min = new Date(parseInt(parts1[0]), parseInt(parts1[1])-1, parseInt(parts1[2]));
+      var max = new Date(parseInt(parts2[0]), parseInt(parts2[1])-1, parseInt(parts2[2]));
+      
+      fechasArray = [];
+      var f = new Date(min.getTime());
+      while (f <= max) {
+        fechasArray.push(new Date(f.getTime()));
+        f.setDate(f.getDate() + 1);
+      }
+      
+      // Set de feriados
+      var feriadosSet = {};
+      for (var fi = 0; fi < data.feriados.length; fi++) {
+        feriadosSet[data.feriados[fi].split('T')[0]] = true;
+      }
+      
+      // Construir tabla
+      var html = '<table><thead><tr><th class="task-header">Actividad</th>';
+      var dias = ['D','L','M','M','J','V','S'];
+      
+      for (var c = 0; c < fechasArray.length; c++) {
+        var fecha = fechasArray[c];
+        var isWE = (fecha.getDay() === 0 || fecha.getDay() === 6);
+        html += '<th class="' + (isWE ? 'weekend-header' : '') + '">' + fecha.getDate() + '<br>' + dias[fecha.getDay()] + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+      
+      // Filas de tareas
+      diasActivos = {};
+      for (var t = 0; t < data.tareas.length; t++) {
+        var tarea = data.tareas[t];
+        html += '<tr><td class="task-name">' + tarea.nombre + '</td>';
+        
+        var tIniParts = tarea.inicio.split('T')[0].split('-');
+        var tFinParts = tarea.fin.split('T')[0].split('-');
+        var tIni = new Date(parseInt(tIniParts[0]), parseInt(tIniParts[1])-1, parseInt(tIniParts[2]));
+        var tFin = new Date(parseInt(tFinParts[0]), parseInt(tFinParts[1])-1, parseInt(tFinParts[2]));
+        
+        for (var c2 = 0; c2 < fechasArray.length; c2++) {
+          var fecha2 = fechasArray[c2];
+          var isWE2 = (fecha2.getDay() === 0 || fecha2.getDay() === 6);
+          var dateKey = fecha2.getFullYear() + '-' + ('0'+(fecha2.getMonth()+1)).slice(-2) + '-' + ('0'+fecha2.getDate()).slice(-2);
+          var isFeriado = feriadosSet[dateKey] === true;
+          var isInRange = (fecha2 >= tIni && fecha2 <= tFin && !isWE2 && !isFeriado);
+          
+          var cellClass = '';
+          if (isFeriado) cellClass = 'feriado';
+          else if (isWE2) cellClass = 'weekend';
+          else if (isInRange) cellClass = 'active';
+          
+          var key = tarea.fila + '_' + c2;
+          if (isInRange) diasActivos[key] = true;
+          
+          html += '<td class="' + cellClass + '" data-key="' + key + '" data-fila="' + tarea.fila + '" data-col="' + c2 + '" onclick="toggleCell(this)">&nbsp;</td>';
+        }
+        html += '</tr>';
+      }
+      
+      html += '</tbody></table>';
+      document.getElementById('grid-container').innerHTML = html;
+      document.getElementById('status').textContent = data.tareas.length + ' tareas, ' + fechasArray.length + ' días.';
+    }
+    
+    function toggleCell(td) {
+      if (td.classList.contains('weekend') || td.classList.contains('feriado')) return;
+      
+      var key = td.getAttribute('data-key');
+      
+      if (diasActivos[key]) {
+        delete diasActivos[key];
+        td.classList.remove('active', 'active-click');
+        td.style.background = '';
+      } else {
+        diasActivos[key] = true;
+        td.classList.add('active-click');
+      }
+    }
+    
+    function guardar() {
+      if (!currentSpreadsheetId || !gridData) return;
+      
+      // Agrupar por fila: encontrar primera y última celda activa
+      var cambios = [];
+      var feriadosSet = {};
+      for (var fi = 0; fi < gridData.feriados.length; fi++) {
+        feriadosSet[gridData.feriados[fi].split('T')[0]] = true;
+      }
+      
+      for (var t = 0; t < gridData.tareas.length; t++) {
+        var tarea = gridData.tareas[t];
+        var primera = -1;
+        var ultima = -1;
+        var diasHabiles = 0;
+        
+        for (var c = 0; c < fechasArray.length; c++) {
+          var key = tarea.fila + '_' + c;
+          if (diasActivos[key]) {
+            if (primera === -1) primera = c;
+            ultima = c;
+            diasHabiles++;
+          }
+        }
+        
+        if (primera !== -1 && ultima !== -1) {
+          var fIni = fechasArray[primera];
+          var fFin = fechasArray[ultima];
+          cambios.push({
+            fila: tarea.fila,
+            fechaInicio: fIni.getFullYear() + '-' + ('0'+(fIni.getMonth()+1)).slice(-2) + '-' + ('0'+fIni.getDate()).slice(-2),
+            fechaFin: fFin.getFullYear() + '-' + ('0'+(fFin.getMonth()+1)).slice(-2) + '-' + ('0'+fFin.getDate()).slice(-2),
+            dias: diasHabiles
+          });
+        }
+      }
+      
+      document.getElementById('status').textContent = '💾 Guardando ' + cambios.length + ' tareas...';
+      
+      google.script.run.withSuccessHandler(function(result) {
+        if (result.ok) {
+          document.getElementById('status').textContent = '✅ ' + result.count + ' tareas guardadas.';
+        }
+      }).withFailureHandler(function(err) {
+        document.getElementById('status').textContent = '❌ Error: ' + err.message;
+      }).guardarCambiosGrilla(currentSpreadsheetId, JSON.stringify(cambios));
+    }
+  </script>
+</body>
+</html>

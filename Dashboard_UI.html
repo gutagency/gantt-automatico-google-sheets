@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+    h1 { color: #FFD700; margin-bottom: 5px; font-size: 24px; }
+    .subtitle { color: #aaa; margin-bottom: 20px; font-size: 14px; }
+    
+    .filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .filters label { font-size: 13px; color: #ccc; }
+    .filters input, .filters select {
+      padding: 6px 10px; border: 1px solid #444; border-radius: 4px;
+      background: #2a2a4a; color: #eee; font-size: 13px;
+    }
+    .filters button {
+      padding: 8px 16px; background: #FFD700; color: #000; border: none;
+      border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 13px;
+    }
+    .filters button:hover { background: #e6c200; }
+    
+    .stats { margin-bottom: 15px; font-size: 13px; color: #aaa; }
+    
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #16213e; color: #FFD700; padding: 10px 8px; text-align: left; position: sticky; top: 0; }
+    td { padding: 8px; border-bottom: 1px solid #2a2a4a; }
+    tr:hover { background: #16213e; }
+    
+    .etapa-creativo { color: #F4A460; }
+    .etapa-produccion { color: #DDA0DD; }
+    .etapa-digital { color: #FF9900; }
+    
+    .loading { text-align: center; padding: 40px; color: #aaa; font-size: 16px; }
+    .error { color: #FF6B6B; padding: 10px; background: #2a1a1a; border-radius: 4px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>📊 Gantt Consolidado</h1>
+  <p class="subtitle">Vista unificada de todos los proyectos activos</p>
+  
+  <div class="filters">
+    <div>
+      <label>Desde:</label><br>
+      <input type="date" id="fechaDesde">
+    </div>
+    <div>
+      <label>Hasta:</label><br>
+      <input type="date" id="fechaHasta">
+    </div>
+    <div>
+      <label>Proyecto:</label><br>
+      <select id="filtroProyecto">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <div>
+      <label>Etapa:</label><br>
+      <select id="filtroEtapa">
+        <option value="">Todas</option>
+        <option value="Creativo">Creativo</option>
+        <option value="Producción">Producción</option>
+        <option value="Digital">Digital</option>
+      </select>
+    </div>
+    <div>
+      <button onclick="aplicarFiltros()">Filtrar</button>
+      <button onclick="cargarDatos()" style="background:#444;color:#eee;">↻ Actualizar</button>
+    </div>
+  </div>
+  
+  <div class="stats" id="stats"></div>
+  
+  <div id="contenido">
+    <div class="loading">⏳ Cargando datos de todos los proyectos...</div>
+  </div>
+
+  <script>
+    var datosGlobal = [];
+    
+    // Cargar datos al iniciar
+    window.onload = function() { cargarDatos(); };
+    
+    function cargarDatos() {
+      document.getElementById('contenido').innerHTML = '<div class="loading">⏳ Cargando datos de todos los proyectos...</div>';
+      google.script.run
+        .withSuccessHandler(function(datos) {
+          datosGlobal = datos;
+          poblarFiltroProyectos(datos);
+          renderTabla(datos);
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('contenido').innerHTML = '<div class="error">❌ Error: ' + err.message + '</div>';
+        })
+        .obtenerDatosConsolidados();
+    }
+    
+    function poblarFiltroProyectos(datos) {
+      var proyectos = {};
+      for (var i = 0; i < datos.length; i++) {
+        proyectos[datos[i].proyecto] = true;
+      }
+      var select = document.getElementById('filtroProyecto');
+      select.innerHTML = '<option value="">Todos</option>';
+      for (var p in proyectos) {
+        select.innerHTML += '<option value="' + p + '">' + p + '</option>';
+      }
+    }
+    
+    function aplicarFiltros() {
+      var desde = document.getElementById('fechaDesde').value;
+      var hasta = document.getElementById('fechaHasta').value;
+      var proyecto = document.getElementById('filtroProyecto').value;
+      var etapa = document.getElementById('filtroEtapa').value;
+      
+      var filtrados = datosGlobal.filter(function(t) {
+        if (proyecto && t.proyecto !== proyecto) return false;
+        if (etapa && t.etapa !== etapa) return false;
+        
+        if (desde || hasta) {
+          var ini = parsearFecha(t.fechaInicio);
+          var fin = parsearFecha(t.fechaFin);
+          if (!ini || !fin) return false;
+          if (desde && fin < new Date(desde)) return false;
+          if (hasta && ini > new Date(hasta)) return false;
+        }
+        
+        return true;
+      });
+      
+      renderTabla(filtrados);
+    }
+    
+    function parsearFecha(str) {
+      if (!str) return null;
+      var p = str.split('/');
+      if (p.length !== 3) return null;
+      return new Date(parseInt(p[2]), parseInt(p[1]) - 1, parseInt(p[0]));
+    }
+    
+    function renderTabla(datos) {
+      if (datos.length === 0) {
+        document.getElementById('contenido').innerHTML = '<div class="loading">No hay tareas para mostrar.</div>';
+        document.getElementById('stats').textContent = '0 tareas';
+        return;
+      }
+      
+      document.getElementById('stats').textContent = datos.length + ' tareas de ' + contarProyectos(datos) + ' proyecto(s)';
+      
+      var html = '<table><thead><tr>';
+      html += '<th>Proyecto</th><th>Etapa</th><th>Actividad</th><th>Días</th><th>Inicio</th><th>Fin</th>';
+      html += '</tr></thead><tbody>';
+      
+      for (var i = 0; i < datos.length; i++) {
+        var t = datos[i];
+        var claseEtapa = '';
+        if (t.etapa === 'Creativo') claseEtapa = 'etapa-creativo';
+        else if (t.etapa === 'Producción') claseEtapa = 'etapa-produccion';
+        else if (t.etapa === 'Digital') claseEtapa = 'etapa-digital';
+        
+        html += '<tr>';
+        html += '<td>' + t.proyecto + '</td>';
+        html += '<td class="' + claseEtapa + '">' + t.etapa + '</td>';
+        html += '<td>' + t.actividad + '</td>';
+        html += '<td>' + t.dias + '</td>';
+        html += '<td>' + t.fechaInicio + '</td>';
+        html += '<td>' + t.fechaFin + '</td>';
+        html += '</tr>';
+      }
+      
+      html += '</tbody></table>';
+      document.getElementById('contenido').innerHTML = html;
+    }
+    
+    function contarProyectos(datos) {
+      var p = {};
+      for (var i = 0; i < datos.length; i++) p[datos[i].proyecto] = true;
+      return Object.keys(p).length;
+    }
+  </script>
+</body>
+</html>
