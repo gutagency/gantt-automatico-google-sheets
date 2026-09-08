@@ -2010,19 +2010,26 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
   if (ultimaFila < 2) return;
   
   var ultimaColumna = hojaCreativo.getLastColumn();
-  if (ultimaColumna >= 6) {
-    var columnasALimpiar = ultimaColumna - 5;
+  if (ultimaColumna >= CONFIG.COL_TIMELINE_INICIO) {
+    var columnasALimpiar = ultimaColumna - (CONFIG.COL_TIMELINE_INICIO - 1);
     if (columnasALimpiar > 0) {
-      hojaCreativo.getRange(1, 6, ultimaFila, columnasALimpiar).clearContent();
-      hojaCreativo.getRange(1, 6, ultimaFila, columnasALimpiar).clearFormat();
+      hojaCreativo.getRange(1, CONFIG.COL_TIMELINE_INICIO, ultimaFila, columnasALimpiar).clearContent();
+      hojaCreativo.getRange(1, CONFIG.COL_TIMELINE_INICIO, ultimaFila, columnasALimpiar).clearFormat();
     }
   }
+
+  // Encabezados de las columnas de entrada F=Status y G=Responsible
+  hojaCreativo.getRange(1, 6).setValue('Status');
+  hojaCreativo.getRange(1, 7).setValue('Responsible');
+  hojaCreativo.getRange(1, 6, 1, 2).setBackground(CONFIG.COLOR_HEADER);
+  hojaCreativo.getRange(1, 6, 1, 2).setFontColor(CONFIG.COLOR_HEADER_TEXT);
+  hojaCreativo.getRange(1, 6, 1, 2).setFontWeight('bold');
   
   if (!fechas || fechas.length === 0) return;
   
   var marca = obtenerMarcaSeleccionada();
   var esMercadoPago = (marca === 'mercado_pago');
-  var colInicio = 6; // Columna F (E es checkbox ⚙️)
+  var colInicio = CONFIG.COL_TIMELINE_INICIO; // Columna H (E=Day Off oculto, F=Status, G=Responsible)
   
   // Header de fechas (mismo formato ML para ambas marcas)
   var headerFechas = [];
@@ -3542,7 +3549,7 @@ function leerGanttActualizarFechas() {
   
   var ultimaFila = hojaCreativo.getLastRow();
   var ultimaCol = hojaCreativo.getLastColumn();
-  var colInicio = 6; // Columna F es donde empieza el timeline
+  var colInicio = CONFIG.COL_TIMELINE_INICIO; // Columna H es donde empieza el timeline
   
   if (ultimaFila < 2 || ultimaCol < colInicio) {
     SpreadsheetApp.getUi().alert('No hay timeline generado en Entrada Proceso Creativo.');
