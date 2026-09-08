@@ -1796,9 +1796,16 @@ function generarGanttInterno(feriados, excepciones) {
   var hojaProduccion = ss.getSheetByName(CONFIG.HOJA_PRODUCCION);
   var hojaGantt = ss.getSheetByName(CONFIG.HOJA_GANTT);
 
-  if (!hojaGantt) {
-    SpreadsheetApp.getUi().alert('Error: No se encontró la hoja "' + CONFIG.HOJA_GANTT + '"');
-    return;
+  // La tab "Gantt" separada está desactivada (CONFIG.TAB_GANTT_ACTIVA = false)
+  // o directamente no existe. En ese caso, todo el dibujado de la tab separada
+  // se hace sobre una hoja TEMPORAL descartable (para no tocar las decenas de
+  // escrituras a hojaGantt), que se borra al final. Lo que el cliente ve es el
+  // timeline INLINE (que se dibuja sobre hojaCreativo, más abajo).
+  var usarTabGantt = (CONFIG.TAB_GANTT_ACTIVA === true) && !!hojaGantt;
+  var hojaGanttEsTemporal = false;
+  if (!usarTabGantt) {
+    hojaGantt = ss.insertSheet('__gantt_temp__' + new Date().getTime());
+    hojaGanttEsTemporal = true;
   }
 
   var actividadesCreativo = obtenerActividadesCreativo(hojaCreativo);
@@ -2168,7 +2175,13 @@ function generarGanttInterno(feriados, excepciones) {
       }
     }
   }
-  
+
+  // Si usamos una hoja temporal (tab Gantt desactivada), la borramos: el
+  // cliente solo ve el timeline inline en la hoja de entrada.
+  if (hojaGanttEsTemporal) {
+    try { ss.deleteSheet(hojaGantt); } catch (e) {}
+  }
+
   SpreadsheetApp.getUi().alert('Gantt generado correctamente.');
 }
 
