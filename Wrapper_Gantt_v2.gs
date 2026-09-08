@@ -47,9 +47,8 @@ function onOpen() {
 
   // Menú do cliente (opções reduzidas, operam sobre a aba "Gantt Meli") — em português
   ui.createMenu('🤝 Agente Meli')
-    .addItem('⬆️ Cascata inversa — colocar Data Fim na última tarefa da etapa', 'cascadaInversaMeli')
-    .addItem('⬇️ Cascata normal — colocar Data Início na primeira tarefa da etapa', 'cascadaNormalMeli')
-    .addItem('↕️ Cascata a partir da posição do cursor. Em Data Início cascateia para cima; em Data Fim cascateia para baixo.', 'cascadaDesdeCursorMeli')
+    .addItem('⬆️ Cascata inversa — a partir de "Fim de veiculação"', 'cascadaInversaMeli')
+    .addItem('⬇️ Cascata normal — a partir da Data Início da primeira tarefa', 'cascadaNormalMeli')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
     .addSeparator()
@@ -83,10 +82,9 @@ function cascadaNormalSubgrupos() { GanttLib.cascadaNormalSubgrupos(); }
 function cascadaDesdeCursorSubgrupo() { GanttLib.cascadaDesdeCursorSubgrupo(); }
 function cascadaInversaEtapaActual() { GanttLib.cascadaInversaEtapaActual(); }
 function cascadaNormalEtapaActual() { GanttLib.cascadaNormalEtapaActual(); }
-// Stubs Meli: llaman a las mismas funciones pero sobre la hoja "Gantt Meli"
-function cascadaInversaMeli() { GanttLib.cascadaInversaEtapaActual('Gantt Meli'); }
-function cascadaNormalMeli() { GanttLib.cascadaNormalEtapaActual('Gantt Meli'); }
-function cascadaDesdeCursorMeli() { GanttLib.cascadaDesdeCursorSubgrupo('Gantt Meli'); }
+// Stubs Meli: funciones propias de Meli (layout ESQUEMA_MELI, hoja "Gantt Meli")
+function cascadaInversaMeli() { GanttLib.cascadaInversaMeliInterna(); }
+function cascadaNormalMeli() { GanttLib.cascadaNormalMeliInterna(); }
 function generarGanttMeli() { GanttLib.generarGanttInlineMeli(); }
 function generarGantt() { GanttLib.generarGantt(); }
 function leerGanttActualizarFechas() { GanttLib.leerGanttActualizarFechas(); }

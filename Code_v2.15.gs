@@ -81,12 +81,12 @@ var CONFIG = {
   HOJA_GANTT: 'Gantt',
   HOJA_INSTRUCCIONES: 'Instrucciones',
   HOJA_LOGS: 'Logs',
-  HOJA_MELI: 'Gantt Meli',   // Hoja del cliente (misma estructura que HOJA_CREATIVO)
+  HOJA_MELI: 'Gantt Meli',   // Hoja del cliente (layout propio, ver ESQUEMA_MELI)
 
-  // Columnas de la tabla de entrada:
+  // Columnas de la tabla de entrada GUT (Gantt GUT):
   // A=Actividad, B=Días, C=Inicio, D=Fin, E=Day Off (oculta/inactiva),
   // F=Status, G=Responsible, H+=timeline
-  COL_TIMELINE_INICIO: 8,    // el timeline (barras) empieza en la columna H
+  COL_TIMELINE_INICIO: 8,    // el timeline (barras) empieza en la columna H (solo GUT)
   
   // Colores
   COLOR_CREATIVO: '#FFF5DC',       // Crema (default)
@@ -118,6 +118,29 @@ var CONFIG = {
   MP_COLOR_BARRA_PRODUCCION_FUERTE: '#7B3F9E',  // Violeta fuerte - barras Producción (1 día)
   MP_COLOR_FINDE: '#F3F3F3',                    // Gris claro - fines de semana
   MP_COLOR_FERIADO: '#D9D9D9'                   // Gris más oscuro - feriados
+};
+
+// ============================================
+// ESQUEMA DE COLUMNAS DE LA HOJA "Gantt Meli"
+// Layout propio del cliente (distinto al de GUT):
+//   A=Macro Tema (agrupador si B vacía), B=Tarefa, C=Owner, D=Dias,
+//   E=Início, F=Fim, G=Status, H=Link, I+=timeline.
+//   Las tareas arrancan en la fila 8. La cascada inversa se ancla en
+//   "Fim de veiculação" (celda B5).
+// ============================================
+
+var ESQUEMA_MELI = {
+  COL_MACRO: 1,        // A - Macro Tema (agrupador cuando la col Tarefa está vacía)
+  COL_TAREA: 2,        // B - Tarefa (nombre de la tarea)
+  COL_OWNER: 3,        // C - Owner (responsable)
+  COL_DIAS: 4,         // D - Dias
+  COL_INICIO: 5,       // E - Início
+  COL_FIN: 6,          // F - Fim
+  COL_STATUS: 7,       // G - Status
+  COL_LINK: 8,         // H - Link
+  COL_TIMELINE_INICIO: 9, // I - donde empieza el timeline inline
+  FILA_INICIO_TAREAS: 8,  // primera fila de tareas/agrupadores
+  CELDA_FIM_VEICULACAO: 'B5' // fecha ancla para la cascada inversa
 };
 
 // ============================================
@@ -1486,40 +1509,176 @@ function guardarExcepcionesEnHoja(excepciones) {
 }
 
 // ============================================
-// GENERAR GANTT INLINE PARA MELI
-// Dibuja el timeline SOLO dentro de la hoja "Gantt Meli" (inline, columna F+),
-// sin crear tab separada. Reutiliza obtenerActividadesCreativo y
-// generarTimelineInline, que ya reciben la hoja por parámetro.
+// FUNCIONES PROPIAS DE MELI ("Gantt Meli")
+// Layout distinto a GUT: usan ESQUEMA_MELI para saber en qué columna está
+// cada dato (Tarefa=B, Dias=D, Início=E, Fim=F, agrupador=A sin Tarefa,
+// tareas desde fila 8, timeline desde columna I).
 // ============================================
 
-function generarGanttInlineMeli() {
+// ¿La fila (0-indexed dentro de datos, que arranca en FILA_INICIO_TAREAS) es
+// un agrupador? Sí cuando hay Macro Tema (A) pero NO hay Tarefa (B).
+function esAgrupadorMeli(macro, tarea) {
+  var tieneMacro = macro && macro.toString().trim() !== '';
+  var tieneTarea = tarea && tarea.toString().trim() !== '';
+  return tieneMacro && !tieneTarea;
+}
+
+// Lee las tareas de Gantt Meli con fechas válidas, según ESQUEMA_MELI.
+function obtenerActividadesMeli(hoja) {
+  var actividades = [];
+  if (!hoja) return actividades;
+
+  var ultimaFila = hoja.getLastRow();
+  var filaIni = ESQUEMA_MELI.FILA_INICIO_TAREAS;
+  if (ultimaFila < filaIni) return actividades;
+
+  var datos = hoja.getRange(filaIni, 1, ultimaFila - filaIni + 1, ESQUEMA_MELI.COL_STATUS).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    var macro = datos[i][ESQUEMA_MELI.COL_MACRO - 1];
+    var tarea = datos[i][ESQUEMA_MELI.COL_TAREA - 1];
+    if (esAgrupadorMeli(macro, tarea)) continue;   // saltar agrupadores
+    if (!tarea || tarea.toString().trim() === '') continue;
+
+    var inicio = datos[i][ESQUEMA_MELI.COL_INICIO - 1];
+    var fin = datos[i][ESQUEMA_MELI.COL_FIN - 1];
+    if (!(inicio instanceof Date) || !(fin instanceof Date)) continue;
+
+    actividades.push({ nombre: tarea.toString(), inicio: inicio, fin: fin });
+  }
+  return actividades;
+}
+
+// CASCADA INVERSA MELI: ancla en "Fim de veiculação" (B5) y cascadea hacia
+// arriba desde la última tarea, respetando días hábiles y feriados.
+function cascadaInversaMeliInterna() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var hojaMeli = ss.getSheetByName(CONFIG.HOJA_MELI);
+  var hoja = ss.getSheetByName(CONFIG.HOJA_MELI);
   var feriados = obtenerFeriados();
 
-  if (!hojaMeli) {
+  if (!hoja) {
     SpreadsheetApp.getUi().alert('No se encontró la hoja "' + CONFIG.HOJA_MELI + '"');
     return;
   }
 
-  var actividades = obtenerActividadesCreativo(hojaMeli);
-  if (actividades.length === 0) {
-    SpreadsheetApp.getUi().alert('No hay actividades con fechas válidas en "' + CONFIG.HOJA_MELI + '".');
+  var fechaAncla = convertirAFecha(hoja.getRange(ESQUEMA_MELI.CELDA_FIM_VEICULACAO).getValue());
+  if (!fechaAncla) {
+    SpreadsheetApp.getUi().alert('No hay "Fim de veiculação" válido en ' + ESQUEMA_MELI.CELDA_FIM_VEICULACAO + '.');
     return;
   }
 
-  // Rango de fechas (mismo criterio que generarGanttInterno)
-  var fechaMin = null;
-  var fechaMax = null;
+  var ultimaFila = hoja.getLastRow();
+  var filaIni = ESQUEMA_MELI.FILA_INICIO_TAREAS;
+  var fechaFinActual = fechaAncla;
+  var procesadas = 0;
+
+  // Recorrer de abajo hacia arriba
+  for (var fila = ultimaFila; fila >= filaIni; fila--) {
+    var macro = hoja.getRange(fila, ESQUEMA_MELI.COL_MACRO).getValue();
+    var tarea = hoja.getRange(fila, ESQUEMA_MELI.COL_TAREA).getValue();
+    if (esAgrupadorMeli(macro, tarea)) continue;
+    if (!tarea || tarea.toString().trim() === '') continue;
+
+    var dias = parseInt(hoja.getRange(fila, ESQUEMA_MELI.COL_DIAS).getValue());
+    if (isNaN(dias) || dias < 1) continue; // sin días cargados, no cascadea
+
+    var fechaFin = fechaFinActual;
+    var fechaInicio = restarDiasHabiles(fechaFin, dias - 1, feriados);
+
+    hoja.getRange(fila, ESQUEMA_MELI.COL_INICIO).setValue(fechaInicio);
+    hoja.getRange(fila, ESQUEMA_MELI.COL_FIN).setValue(fechaFin);
+
+    fechaFinActual = diaHabilAnterior(fechaInicio, feriados);
+    procesadas++;
+  }
+
+  hoja.getRange(filaIni, ESQUEMA_MELI.COL_INICIO, ultimaFila - filaIni + 1, 2).setNumberFormat('dd/MM/yyyy');
+  SpreadsheetApp.getActiveSpreadsheet().toast('Cascata inversa Meli: ' + procesadas + ' tarefa(s).', '✅ Pronto', 6);
+  registrarLog('Cascada inversa', CONFIG.HOJA_MELI + ' (' + procesadas + ' tareas)');
+}
+
+// CASCADA NORMAL MELI: ancla en la Fecha Início de la primera tarea con fecha,
+// y cascadea hacia abajo.
+function cascadaNormalMeliInterna() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_MELI);
+  var feriados = obtenerFeriados();
+
+  if (!hoja) {
+    SpreadsheetApp.getUi().alert('No se encontró la hoja "' + CONFIG.HOJA_MELI + '"');
+    return;
+  }
+
+  var ultimaFila = hoja.getLastRow();
+  var filaIni = ESQUEMA_MELI.FILA_INICIO_TAREAS;
+
+  // Buscar la primera tarea con Fecha Início cargada como ancla
+  var fechaInicioActual = null;
+  for (var fb = filaIni; fb <= ultimaFila; fb++) {
+    var macroB = hoja.getRange(fb, ESQUEMA_MELI.COL_MACRO).getValue();
+    var tareaB = hoja.getRange(fb, ESQUEMA_MELI.COL_TAREA).getValue();
+    if (esAgrupadorMeli(macroB, tareaB)) continue;
+    if (!tareaB || tareaB.toString().trim() === '') continue;
+    var ini = convertirAFecha(hoja.getRange(fb, ESQUEMA_MELI.COL_INICIO).getValue());
+    if (ini) { fechaInicioActual = ini; break; }
+  }
+
+  if (!fechaInicioActual) {
+    SpreadsheetApp.getUi().alert('No hay una Fecha Início de referencia en la primera tarea.');
+    return;
+  }
+
+  if (!esDiaHabil(fechaInicioActual, feriados)) {
+    fechaInicioActual = siguienteDiaHabil(fechaInicioActual, feriados);
+  }
+
+  var procesadas = 0;
+  for (var fila = filaIni; fila <= ultimaFila; fila++) {
+    var macro = hoja.getRange(fila, ESQUEMA_MELI.COL_MACRO).getValue();
+    var tarea = hoja.getRange(fila, ESQUEMA_MELI.COL_TAREA).getValue();
+    if (esAgrupadorMeli(macro, tarea)) continue;
+    if (!tarea || tarea.toString().trim() === '') continue;
+
+    var dias = parseInt(hoja.getRange(fila, ESQUEMA_MELI.COL_DIAS).getValue());
+    if (isNaN(dias) || dias < 1) continue;
+
+    var fechaInicio = fechaInicioActual;
+    var fechaFin = sumarDiasHabiles(fechaInicio, dias - 1, feriados);
+
+    hoja.getRange(fila, ESQUEMA_MELI.COL_INICIO).setValue(fechaInicio);
+    hoja.getRange(fila, ESQUEMA_MELI.COL_FIN).setValue(fechaFin);
+
+    fechaInicioActual = siguienteDiaHabil(fechaFin, feriados);
+    procesadas++;
+  }
+
+  hoja.getRange(filaIni, ESQUEMA_MELI.COL_INICIO, ultimaFila - filaIni + 1, 2).setNumberFormat('dd/MM/yyyy');
+  SpreadsheetApp.getActiveSpreadsheet().toast('Cascata normal Meli: ' + procesadas + ' tarefa(s).', '✅ Pronto', 6);
+  registrarLog('Cascada normal', CONFIG.HOJA_MELI + ' (' + procesadas + ' tareas)');
+}
+
+// GENERAR GANTT INLINE MELI: dibuja el timeline dentro de "Gantt Meli",
+// desde la columna I, según ESQUEMA_MELI. Sin tab aparte.
+function generarGanttInlineMeli() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_MELI);
+  var feriados = obtenerFeriados();
+
+  if (!hoja) {
+    SpreadsheetApp.getUi().alert('No se encontró la hoja "' + CONFIG.HOJA_MELI + '"');
+    return;
+  }
+
+  var actividades = obtenerActividadesMeli(hoja);
+  if (actividades.length === 0) {
+    SpreadsheetApp.getUi().alert('No hay tareas con fechas válidas en "' + CONFIG.HOJA_MELI + '".');
+    return;
+  }
+
+  // Rango de fechas
+  var fechaMin = null, fechaMax = null;
   for (var i = 0; i < actividades.length; i++) {
-    var act = actividades[i];
-    if (fechaMin === null || act.inicio < fechaMin) fechaMin = act.inicio;
-    if (fechaMax === null || act.fin > fechaMax) fechaMax = act.fin;
-    if (act.excepciones) {
-      for (var xe = 0; xe < act.excepciones.length; xe++) {
-        if (act.excepciones[xe] > fechaMax) fechaMax = act.excepciones[xe];
-      }
-    }
+    if (fechaMin === null || actividades[i].inicio < fechaMin) fechaMin = actividades[i].inicio;
+    if (fechaMax === null || actividades[i].fin > fechaMax) fechaMax = actividades[i].fin;
   }
 
   var fechas = [];
@@ -1530,12 +1689,65 @@ function generarGanttInlineMeli() {
   }
 
   var meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  var diasSemana = ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+  var colInicio = ESQUEMA_MELI.COL_TIMELINE_INICIO;
+  var filaIni = ESQUEMA_MELI.FILA_INICIO_TAREAS;
+  var ultimaFila = hoja.getLastRow();
 
-  formatearFechasCreativo(CONFIG.HOJA_MELI);
-  generarTimelineInline(hojaMeli, actividades, fechas, feriados, meses, diasSemana);
+  // Limpiar el área del timeline (desde columna I hacia la derecha)
+  var ultimaColumna = hoja.getLastColumn();
+  if (ultimaColumna >= colInicio) {
+    hoja.getRange(1, colInicio, ultimaFila, ultimaColumna - colInicio + 1).clearContent();
+    hoja.getRange(1, colInicio, ultimaFila, ultimaColumna - colInicio + 1).clearFormat();
+  }
 
-  SpreadsheetApp.getActiveSpreadsheet().toast('Gantt de Meli generado.', '✅ Listo', 5);
+  // Header de fechas en la fila de encabezados (fila 7 = filaIni - 1)
+  var filaHeader = filaIni - 1;
+  var headerFechas = [];
+  for (var j = 0; j < fechas.length; j++) {
+    var f = fechas[j];
+    headerFechas.push(f.getDate() + ' ' + meses[f.getMonth()]);
+  }
+  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setValues([headerFechas]);
+  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setBackground(CONFIG.COLOR_HEADER);
+  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setFontColor(CONFIG.COLOR_HEADER_TEXT);
+  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setFontWeight('bold');
+  hoja.getRange(filaHeader, colInicio, 1, headerFechas.length).setHorizontalAlignment('center');
+
+  // Pintar findes/feriados de fondo
+  for (var k = 0; k < fechas.length; k++) {
+    if (esFeriado(fechas[k], feriados) || esFinDeSemana(fechas[k])) {
+      hoja.getRange(filaHeader, k + colInicio, ultimaFila - filaHeader + 1, 1).setBackground(CONFIG.COLOR_FINDE_BARRA);
+    }
+  }
+
+  // Pintar barras (días hábiles dentro del rango de cada tarea)
+  var datos = hoja.getRange(filaIni, 1, ultimaFila - filaIni + 1, ESQUEMA_MELI.COL_FIN).getValues();
+  for (var fila = 0; fila < datos.length; fila++) {
+    var tarea = datos[fila][ESQUEMA_MELI.COL_TAREA - 1];
+    var ini = datos[fila][ESQUEMA_MELI.COL_INICIO - 1];
+    var fin = datos[fila][ESQUEMA_MELI.COL_FIN - 1];
+    if (!tarea || !(ini instanceof Date) || !(fin instanceof Date)) continue;
+
+    var filaHoja = filaIni + fila;
+    for (var d = 0; d < fechas.length; d++) {
+      var fechaCol = fechas[d];
+      if (fechaCol >= ini && fechaCol <= fin && esDiaHabil(fechaCol, feriados)) {
+        var celda = hoja.getRange(filaHoja, d + colInicio);
+        celda.setBackground(CONFIG.COLOR_PRESENTACION);
+        celda.setValue('x');
+        celda.setFontSize(6);
+        celda.setHorizontalAlignment('center');
+      }
+    }
+  }
+
+  // Ancho de columnas del timeline
+  for (var c = colInicio; c < colInicio + fechas.length; c++) {
+    hoja.setColumnWidth(c, 40);
+  }
+
+  hoja.getRange(filaIni, ESQUEMA_MELI.COL_INICIO, ultimaFila - filaIni + 1, 2).setNumberFormat('dd/MM/yyyy');
+  SpreadsheetApp.getActiveSpreadsheet().toast('Gantt de Meli generado.', '✅ Pronto', 5);
   registrarLog('Generar Gantt', CONFIG.HOJA_MELI);
 }
 
@@ -2721,10 +2933,12 @@ function onEdit(e) {
     return;
   }
   
-  // Actuar sobre la hoja de GUT o la de Meli (misma estructura).
+  // La sincronización automática Días<->Fechas del onEdit asume el layout de
+  // GUT (Días=B, Inicio=C, Fin=D). La hoja "Gantt Meli" tiene otro layout
+  // (Días=D, Inicio=E, Fin=F), así que NO se sincroniza automáticamente ahí:
+  // el cliente recalcula con el menú Agente Meli (que usa ESQUEMA_MELI).
   var esGut = (nombreHoja === CONFIG.HOJA_CREATIVO);
-  var esMeli = (nombreHoja === CONFIG.HOJA_MELI);
-  if (!esGut && !esMeli) return;
+  if (!esGut) return;
   
   var filaIni = e.range.getRow();
   var filaFin = filaIni + e.range.getNumRows() - 1;
