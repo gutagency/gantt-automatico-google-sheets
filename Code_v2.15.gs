@@ -405,12 +405,14 @@ function obtenerMarcaSeleccionada() {
   
   if (!hojaInstrucciones) return 'mercado_libre';
   
-  // Marca: checkboxes en columna C, filas 11 (ML), 12 (MP), 13 (Estándar)
+  // Marca: checkboxes en columna C, filas 11 (ML), 12 (MP), 13 (Estándar), 14 (Pedidos Ya)
   var checkMP = hojaInstrucciones.getRange('C12').getValue();
   var checkEstandar = hojaInstrucciones.getRange('C13').getValue();
+  var checkPedidosYa = hojaInstrucciones.getRange('C14').getValue();
   
   if (checkMP === true || checkMP === 'TRUE' || checkMP === 'true') return 'mercado_pago';
   if (checkEstandar === true || checkEstandar === 'TRUE' || checkEstandar === 'true') return 'estandar';
+  if (checkPedidosYa === true || checkPedidosYa === 'TRUE' || checkPedidosYa === 'true') return 'pedidos_ya';
   return 'mercado_libre';
 }
 
@@ -517,7 +519,7 @@ function poblarTareasPredeterminadas() {
       .setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
   }
   
-  var nombreMarca = (marca === 'mercado_pago') ? 'Mercado Pago' : (marca === 'estandar') ? 'Estándar' : 'Mercado Libre';
+  var nombreMarca = (marca === 'mercado_pago') ? 'Mercado Pago' : (marca === 'estandar') ? 'Estándar' : (marca === 'pedidos_ya') ? 'Pedidos Ya' : 'Mercado Libre';
   SpreadsheetApp.getActiveSpreadsheet().toast(
     'Tareas predeterminadas cargadas para ' + nombreMarca + '.',
     '✅ Listo', 5);
@@ -3029,24 +3031,25 @@ function onEdit(e) {
   var nombreHoja = hoja.getName();
   
   // Detectar cambio de checkbox de marca en Instrucciones.
-  // Marca: columna C (3), filas 11 (ML), 12 (MP), 13 (Estándar).
+  // Marca: columna C (3), filas 11 (ML), 12 (MP), 13 (Estándar), 14 (Pedidos Ya).
   if (nombreHoja === CONFIG.HOJA_INSTRUCCIONES) {
     var filaEdit = e.range.getRow();
     var colEdit = e.range.getColumn();
     
-    if (colEdit === 3 && (filaEdit === 11 || filaEdit === 12 || filaEdit === 13)) {
-      // Checkboxes mutuamente excluyentes (C11=ML, C12=MP, C13=Estándar)
+    var filasMarca = [11, 12, 13, 14]; // C11=ML, C12=MP, C13=Estándar, C14=Pedidos Ya
+    var esFilaMarca = false;
+    for (var fm = 0; fm < filasMarca.length; fm++) {
+      if (filaEdit === filasMarca[fm]) { esFilaMarca = true; break; }
+    }
+    
+    if (colEdit === 3 && esFilaMarca) {
+      // Checkboxes mutuamente excluyentes: al marcar uno, se desmarcan los demás.
       var valor = e.range.getValue();
       if (valor === true) {
-        if (filaEdit === 11) {
-          hoja.getRange('C12').setValue(false);
-          hoja.getRange('C13').setValue(false);
-        } else if (filaEdit === 12) {
-          hoja.getRange('C11').setValue(false);
-          hoja.getRange('C13').setValue(false);
-        } else if (filaEdit === 13) {
-          hoja.getRange('C11').setValue(false);
-          hoja.getRange('C12').setValue(false);
+        for (var fd = 0; fd < filasMarca.length; fd++) {
+          if (filasMarca[fd] !== filaEdit) {
+            hoja.getRange('C' + filasMarca[fd]).setValue(false);
+          }
         }
       }
       poblarTareasPredeterminadas();
