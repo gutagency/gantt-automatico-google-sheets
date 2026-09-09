@@ -1405,7 +1405,6 @@ function generarGantt() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   
   var hojaCreativo = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
-  var hojaProduccion = ss.getSheetByName(CONFIG.HOJA_PRODUCCION);
   var hojaGantt = ss.getSheetByName(CONFIG.HOJA_GANTT);
   var feriados = obtenerFeriados();
   
@@ -1820,7 +1819,6 @@ function generarGanttInlineMeli() {
 function generarGanttInterno(feriados, excepciones) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hojaCreativo = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
-  var hojaProduccion = ss.getSheetByName(CONFIG.HOJA_PRODUCCION);
   var hojaGantt = ss.getSheetByName(CONFIG.HOJA_GANTT);
 
   // La tab "Gantt" separada está desactivada (CONFIG.TAB_GANTT_ACTIVA = false)
@@ -1832,8 +1830,14 @@ function generarGanttInterno(feriados, excepciones) {
     hojaGantt = crearHojaNoOp();
   }
 
+  // Normalizar fechas de "Gantt GUT" (texto → Date) antes de leer las
+  // actividades, para que las filas pegadas (incluida la producción) se
+  // reconozcan en el Gantt visual inline.
+  normalizarFechasCreativo();
+
+  // La producción ya no vive en una hoja aparte: se pega dentro de "Gantt GUT",
+  // así que obtenerActividadesCreativo() ya la incluye como filas normales.
   var actividadesCreativo = obtenerActividadesCreativo(hojaCreativo);
-  var actividadesProduccion = obtenerActividadesProduccion(hojaProduccion);
   
   var actividadesCreativoSinFinal = [];
   var actividadesFinales = [];
@@ -1855,7 +1859,7 @@ function generarGanttInterno(feriados, excepciones) {
     return 0;
   });
   
-  var todasActividades = actividadesCreativoSinFinal.concat(actividadesProduccion).concat(actividadesFinales);
+  var todasActividades = actividadesCreativoSinFinal.concat(actividadesFinales);
   
   if (todasActividades.length === 0) {
     SpreadsheetApp.getUi().alert('No hay actividades con fechas válidas para mostrar.');
@@ -2995,15 +2999,14 @@ function onChange(e) {
   
   var nombreHoja = hojaActiva.getName();
   
-  if (nombreHoja === CONFIG.HOJA_PRODUCCION) {
+  if (nombreHoja === CONFIG.HOJA_CREATIVO) {
     var ultimaFila = hojaActiva.getLastRow();
     if (ultimaFila < 2) return;
     
-    var primeraActividad = hojaActiva.getRange(2, 1).getValue();
-    if (!primeraActividad || primeraActividad.toString().trim() === '') return;
-    
-    normalizarFechasProduccion();
-    eliminarFilasProduccionPlaceholder();
+    // Al pegar datos (incluida la tabla de producción) en "Gantt GUT", las
+    // fechas pueden entrar como texto. Se normalizan a Date real para que el
+    // Gantt visual inline las reconozca.
+    normalizarFechasCreativo();
   }
   
   if (nombreHoja === CONFIG.HOJA_INSTRUCCIONES) {
@@ -3254,16 +3257,22 @@ function sincronizarFechasDesdeDias(hoja, fila, feriados) {
 // NORMALIZAR FECHAS EN ENTRADA PRODUCCIÓN (texto → Date)
 // ============================================
 
-function normalizarFechasProduccion() {
+// Normaliza las fechas de "Gantt GUT" (columnas C=Fecha Inicio y D=Fecha Fin):
+// convierte cualquier texto de fecha (ej. "15/01/2026") en una fecha real (Date)
+// y aplica el formato dd/MM/yyyy. Es el ajuste que antes hacía la hoja
+// "Entrada Producción"; ahora que la data de producción se pega dentro de
+// "Gantt GUT", esto asegura que el Gantt visual inline reconozca esas fechas.
+function normalizarFechasCreativo() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var hoja = ss.getSheetByName(CONFIG.HOJA_PRODUCCION);
+  var hoja = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
   
   if (!hoja) return;
   
   var ultimaFila = hoja.getLastRow();
   if (ultimaFila < 2) return;
   
-  var rango = hoja.getRange(2, 2, ultimaFila - 1, 2);
+  // Columnas C (Inicio) y D (Fin), desde la fila 2.
+  var rango = hoja.getRange(2, 3, ultimaFila - 1, 2);
   var valores = rango.getValues();
   var cambios = false;
   
@@ -3283,8 +3292,10 @@ function normalizarFechasProduccion() {
   
   if (cambios) {
     rango.setValues(valores);
-    rango.setNumberFormat('dd/MM/yyyy');
   }
+  
+  // Formato dd/MM/yyyy en toda la columna de datos (idempotente).
+  rango.setNumberFormat('dd/MM/yyyy');
 }
 
 // ============================================
