@@ -28,31 +28,31 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
 
-  // Menú interno de la agencia (todas las opciones)
+  // Internal agency menu (all options) — in English
   ui.createMenu('🤖 Agente GUT')
-    .addItem('⬆️ Cascada inversa — poner Fecha Fin en última tarea de la etapa', 'cascadaInversaEtapaActual')
-    .addItem('⬇️ Cascada normal — poner Fecha Inicio en primera tarea de la etapa', 'cascadaNormalEtapaActual')
-    .addItem('↕️ Cascada desde ubicación del cursor. Ubicado en Fecha Inicio cascadea arriba, ubicado en Fecha Fin cascadea abajo.', 'cascadaDesdeCursorSubgrupo')
+    .addItem('⬆️ Reverse cascade — set End Date on the last task of the stage', 'cascadaInversaEtapaActual')
+    .addItem('⬇️ Normal cascade — set Start Date on the first task of the stage', 'cascadaNormalEtapaActual')
+    .addItem('↕️ Cascade from cursor position. On Start Date cascades up, on End Date cascades down.', 'cascadaDesdeCursorSubgrupo')
     .addSeparator()
-    .addItem('📊 Generar Gantt en este documento', 'generarGantt')
-    .addItem('🔄 Leer Gantt → Actualizar fechas', 'leerGanttActualizarFechas')
-    .addItem('📤 Copiar Gantt a Cliente', 'copiarGanttACliente')
-    .addItem('📄 Generar resumen (Google Doc)', 'generarResumenEnDoc')
+    .addItem('📊 Generate Gantt in this document', 'generarGantt')
+    .addItem('🔄 Read Gantt → Update dates', 'leerGanttActualizarFechas')
+    .addItem('📤 Copy Gantt to Client', 'copiarGanttACliente')
+    .addItem('📄 Generate summary (Google Doc)', 'generarResumenEnDoc')
     .addSeparator()
-    .addItem('⚙️ Instalar trigger automático', 'instalarTriggerAutomatico')
+    .addItem('⚙️ Install automatic trigger', 'instalarTriggerAutomatico')
     .addSeparator()
-    .addItem('🤖 Asistente AI', 'abrirAsistenteAI')
+    .addItem('🤖 AI Assistant', 'abrirAsistenteAI')
     .addItem('👋 Onboarding (avatar)', 'abrirOnboarding')
     .addToUi();
 
-  // Menú do cliente (opções reduzidas, operam sobre a aba "Gantt Meli") — em português
+  // Client menu (reduced options, operate on the "Gantt Meli" tab) — in English
   ui.createMenu('🤝 Agente Meli')
-    .addItem('⬆️ Cascata inversa — a partir de "Fim de veiculação"', 'cascadaInversaMeli')
-    .addItem('⬇️ Cascata normal — a partir da Data Início da primeira tarefa', 'cascadaNormalMeli')
+    .addItem('⬆️ Reverse cascade — from "Fim de veiculação"', 'cascadaInversaMeli')
+    .addItem('⬇️ Normal cascade — from the Start Date of the first task', 'cascadaNormalMeli')
     .addSeparator()
-    .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
+    .addItem('📊 Generate Gantt in this document', 'generarGanttMeli')
     .addSeparator()
-    .addItem('🤖 Assistente AI', 'abrirAsistenteAI')
+    .addItem('🤖 AI Assistant', 'abrirAsistenteAI')
     .addToUi();
 }
 
@@ -123,5 +123,5 @@ function instalarTriggerAutomatico() {
     .onEdit()
     .create();
 
-  SpreadsheetApp.getUi().alert('Triggers instalados: cambios (onChange) + edición de celdas (onEdit).');
+  SpreadsheetApp.getUi().alert('Triggers installed: changes (onChange) + cell edits (onEdit).');
 }

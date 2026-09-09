@@ -17,20 +17,20 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
 
-  // Menú interno de la agencia (todas las opciones)
+  // Menu interno da agência (todas as opções) — em português
   ui.createMenu('🤖 Agente GUT')
-    .addItem('⬆️ Cascada inversa — poner Fecha Fin en última tarea de la etapa', 'cascadaInversaEtapaActual')
-    .addItem('⬇️ Cascada normal — poner Fecha Inicio en primera tarea de la etapa', 'cascadaNormalEtapaActual')
-    .addItem('↕️ Cascada desde ubicación del cursor. Ubicado en Fecha Inicio cascadea arriba, ubicado en Fecha Fin cascadea abajo.', 'cascadaDesdeCursorSubgrupo')
+    .addItem('⬆️ Cascata inversa — colocar Data Fim na última tarefa da etapa', 'cascadaInversaEtapaActual')
+    .addItem('⬇️ Cascata normal — colocar Data Início na primeira tarefa da etapa', 'cascadaNormalEtapaActual')
+    .addItem('↕️ Cascata a partir da posição do cursor. Na Data Início cascateia para cima, na Data Fim cascateia para baixo.', 'cascadaDesdeCursorSubgrupo')
     .addSeparator()
-    .addItem('📊 Generar Gantt en este documento', 'generarGantt')
-    .addItem('🔄 Leer Gantt → Actualizar fechas', 'leerGanttActualizarFechas')
-    .addItem('📤 Copiar Gantt a Cliente', 'copiarGanttACliente')
-    .addItem('📄 Generar resumen (Google Doc)', 'generarResumenEnDoc')
+    .addItem('📊 Gerar Gantt neste documento', 'generarGantt')
+    .addItem('🔄 Ler Gantt → Atualizar datas', 'leerGanttActualizarFechas')
+    .addItem('📤 Copiar Gantt para o Cliente', 'copiarGanttACliente')
+    .addItem('📄 Gerar resumo (Google Doc)', 'generarResumenEnDoc')
     .addSeparator()
-    .addItem('⚙️ Instalar trigger automático', 'instalarTriggerAutomatico')
+    .addItem('⚙️ Instalar gatilho automático', 'instalarTriggerAutomatico')
     .addSeparator()
-    .addItem('🤖 Asistente AI', 'abrirAsistenteAI')
+    .addItem('🤖 Assistente AI', 'abrirAsistenteAI')
     .addItem('👋 Onboarding (avatar)', 'abrirOnboarding')
     .addToUi();
 
@@ -112,5 +112,5 @@ function instalarTriggerAutomatico() {
     .onEdit()
     .create();
 
-  SpreadsheetApp.getUi().alert('Triggers instalados: cambios (onChange) + edición de celdas (onEdit).');
+  SpreadsheetApp.getUi().alert('Gatilhos instalados: mudanças (onChange) + edição de células (onEdit).');
 }
