@@ -105,6 +105,9 @@ var CONFIG = {
   COLOR_SUPERPOSICION: '#9FC5E8',  // Azul claro - celdas del Gantt donde se superponen 2+ tareas
   COLOR_AVISO_SUPERPOSICION: '#A2DCF0', // Celeste - celdas de fecha (C:D) de entrada cuando hay superposición
   
+  // Color de barras - Pedidos Ya (rojo suave de marca)
+  PY_COLOR_BARRA: '#EF9A9A',       // Rojo suave - barras del Gantt para Pedidos Ya
+  
   // Colores Mercado Pago - Gantt
   MP_COLOR_AGRUPADOR_CREATIVO: '#CC0000',       // Rojo - Desarrollo Creativo
   MP_COLOR_AGRUPADOR_DIGITAL: '#FF6D00',        // Naranja - Desarrollo Estrategia Digital
@@ -2437,6 +2440,8 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
     if (esMercadoPago) {
       var diasActividad = calcularDiasHabiles(fechaInicio, fechaFin, feriados);
       colorActividad = obtenerColorActividadMP(seccionPorFila[fila], diasActividad);
+    } else if (marca === 'pedidos_ya') {
+      colorActividad = CONFIG.PY_COLOR_BARRA; // Rojo suave de marca Pedidos Ya
     } else {
       colorActividad = CONFIG.COLOR_PRESENTACION; // Amarillo uniforme
     }
