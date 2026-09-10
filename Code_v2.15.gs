@@ -3287,6 +3287,9 @@ function normalizarFechasCreativo() {
   var valores = rango.getValues();
   var cambios = false;
   
+  // IMPORTANTE: solo tocar las celdas que son TEXTO. Las que ya son Date se
+  // dejan intactas (no se reformatean) para no alterar fechas que ya entraban
+  // bien desde la entrada automática.
   for (var i = 0; i < valores.length; i++) {
     for (var j = 0; j < 2; j++) {
       var valor = valores[i][j];
@@ -3294,19 +3297,15 @@ function normalizarFechasCreativo() {
       if (typeof valor === 'string' && valor.trim() !== '') {
         var fecha = convertirAFecha(valor);
         if (fecha) {
-          valores[i][j] = fecha;
+          // Escribir la fecha convertida + formato solo en esa celda.
+          var celda = hoja.getRange(2 + i, 3 + j);
+          celda.setValue(fecha);
+          celda.setNumberFormat('dd/MM/yyyy');
           cambios = true;
         }
       }
     }
   }
-  
-  if (cambios) {
-    rango.setValues(valores);
-  }
-  
-  // Formato dd/MM/yyyy en toda la columna de datos (idempotente).
-  rango.setNumberFormat('dd/MM/yyyy');
 }
 
 // Completa la columna Días (B) de "Gantt GUT" para las filas que tienen
