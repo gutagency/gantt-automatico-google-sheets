@@ -1835,6 +1835,11 @@ function generarGanttInterno(feriados, excepciones) {
   // reconozcan en el Gantt visual inline.
   normalizarFechasCreativo();
 
+  // Completar Días (B) en las filas que tienen ambas fechas pero sin días
+  // (p. ej. la entrada automática de la cuenta de servicio). Respaldo por si
+  // el trigger onChange no corrió.
+  completarDiasFaltantesCreativo();
+
   // La producción ya no vive en una hoja aparte: se pega dentro de "Gantt GUT",
   // así que obtenerActividadesCreativo() ya la incluye como filas normales.
   var actividadesCreativo = obtenerActividadesCreativo(hojaCreativo);
@@ -3007,6 +3012,12 @@ function onChange(e) {
     // fechas pueden entrar como texto. Se normalizan a Date real para que el
     // Gantt visual inline las reconozca.
     normalizarFechasCreativo();
+    
+    // Cuando la cuenta de servicio inserta la entrada automática, viene con
+    // Fecha Inicio (C) y Fecha Fin (D) pero sin Días (B). onEdit no se dispara
+    // con escrituras programáticas, así que acá se calculan los días hábiles
+    // y se completan en la columna B (solo filas con Días vacío).
+    completarDiasFaltantesCreativo();
   }
   
   if (nombreHoja === CONFIG.HOJA_INSTRUCCIONES) {
@@ -3296,6 +3307,52 @@ function normalizarFechasCreativo() {
   
   // Formato dd/MM/yyyy en toda la columna de datos (idempotente).
   rango.setNumberFormat('dd/MM/yyyy');
+}
+
+// Completa la columna Días (B) de "Gantt GUT" para las filas que tienen
+// Fecha Inicio (C) y Fecha Fin (D) pero Días vacío. Calcula días HÁBILES
+// (excluye findes y feriados), igual que el resto del Gantt. NO pisa valores
+// de Días ya existentes ni toca las filas agrupadoras (col A con texto y B vacía,
+// que se dejan vacías a propósito).
+// Pensado para cuando la cuenta de servicio inserta la entrada automática:
+// onEdit no se dispara con escrituras programáticas, así que se llama desde onChange.
+function completarDiasFaltantesCreativo() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
+  
+  if (!hoja) return;
+  
+  var ultimaFila = hoja.getLastRow();
+  if (ultimaFila < 2) return;
+  
+  var feriados = obtenerFeriados();
+  
+  // Columnas A (Actividad), B (Días), C (Inicio), D (Fin), desde la fila 2.
+  var datos = hoja.getRange(2, 1, ultimaFila - 1, 4).getValues();
+  var columnaDias = [];
+  var hayCambios = false;
+  
+  for (var i = 0; i < datos.length; i++) {
+    var actividad = datos[i][0];
+    var diasActual = datos[i][1];
+    var inicio = convertirAFecha(datos[i][2]);
+    var fin = convertirAFecha(datos[i][3]);
+    
+    var diasEstaVacio = (diasActual === '' || diasActual === null || diasActual === undefined);
+    
+    // Solo completar filas de tarea (no agrupadores) con ambas fechas y Días vacío.
+    if (actividad && diasEstaVacio && inicio && fin && !esFilaHeaderSubgrupo(actividad, diasActual)) {
+      columnaDias.push([calcularDiasHabiles(inicio, fin, feriados)]);
+      hayCambios = true;
+    } else {
+      // Dejar el valor como está (agrupadores, filas ya con días, o incompletas).
+      columnaDias.push([diasActual]);
+    }
+  }
+  
+  if (hayCambios) {
+    hoja.getRange(2, 2, columnaDias.length, 1).setValues(columnaDias);
+  }
 }
 
 // ============================================
