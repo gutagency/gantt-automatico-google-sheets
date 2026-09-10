@@ -3355,6 +3355,40 @@ function completarDiasFaltantesCreativo() {
 }
 
 // ============================================
+// DIAGNÓSTICO: correr a mano desde el editor de Apps Script (Ejecutar →
+// diagnosticarDiasCreativo) y mirar el Log (Ver → Registros / Ctrl+Enter).
+// Muestra, fila por fila, qué ve el código en A/B/C/D y por qué completa o no.
+// ============================================
+function diagnosticarDiasCreativo() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
+  if (!hoja) { Logger.log('NO existe la hoja "' + CONFIG.HOJA_CREATIVO + '"'); return; }
+
+  var ultimaFila = hoja.getLastRow();
+  Logger.log('Hoja: ' + hoja.getName() + ' | ultimaFila: ' + ultimaFila);
+
+  var datos = hoja.getRange(2, 1, ultimaFila - 1, 4).getValues();
+  for (var i = 0; i < datos.length; i++) {
+    var fila = i + 2;
+    var actividad = datos[i][0];
+    var diasActual = datos[i][1];
+    var cRaw = datos[i][2];
+    var dRaw = datos[i][3];
+    var inicio = convertirAFecha(cRaw);
+    var fin = convertirAFecha(dRaw);
+    var diasEstaVacio = (diasActual === '' || diasActual === null || diasActual === undefined);
+
+    Logger.log(
+      'Fila ' + fila +
+      ' | A="' + actividad + '"' +
+      ' | B(dias)="' + diasActual + '" (vacio=' + diasEstaVacio + ')' +
+      ' | C tipo=' + (typeof cRaw) + ' val="' + cRaw + '" -> ' + (inicio ? inicio : 'NULL') +
+      ' | D tipo=' + (typeof dRaw) + ' val="' + dRaw + '" -> ' + (fin ? fin : 'NULL') +
+      ' | COMPLETA=' + (actividad && diasEstaVacio && inicio && fin)
+    );
+  }
+}
+
 // NORMALIZAR FECHAS EN FERIADOS (texto dd/MM/yyyy → Date) - Columna C
 // ============================================
 // Convierte cualquier texto dd/MM/yyyy de la columna C en fecha real (Date)
