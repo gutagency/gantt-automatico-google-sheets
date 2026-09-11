@@ -31,7 +31,7 @@ function onOpen() {
     .addItem('⚙️ Instalar gatilho automático', 'instalarTriggerAutomatico')
     .addSeparator()
     .addItem('🤖 Assistente AI', 'abrirAsistenteAI')
-    .addItem('👋 Onboarding (avatar)', 'abrirOnboarding')
+    .addItem('👋 Onboarding (avatar) — em desenvolvimento', 'abrirOnboarding')
     .addToUi();
 
   // Menú do cliente (opções reduzidas, operam sobre a aba "Gantt Meli") — em português
@@ -81,7 +81,11 @@ function generarGanttConExcepciones(excepcionesJSON) { GanttLib.generarGanttConE
 function reejecutarCascadaConExcepciones(excepcionesJSON, tipoCascada) { GanttLib.reejecutarCascadaConExcepciones(excepcionesJSON, tipoCascada); }
 function copiarGanttACliente() { GanttLib.copiarGanttACliente(); }
 function abrirAsistenteAI() { GanttLib.abrirAsistenteAI(); }
-function abrirOnboarding() { GanttLib.abrirOnboarding(); }
+function abrirOnboarding() {
+  // Aviso: funcionalidade em desenvolvimento (evita gerar falsa expectativa).
+  SpreadsheetApp.getUi().alert('👋 Onboarding (avatar)\n\nEsta funcionalidade ainda está em desenvolvimento. Em breve estará disponível.');
+  GanttLib.abrirOnboarding();
+}
 function generarResumenEnDoc() { GanttLib.generarResumenEnDoc(); }
 function procesarMensajeBot(msg) { return GanttLib.procesarMensajeBot(msg); }
 

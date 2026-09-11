@@ -42,7 +42,7 @@ function onOpen() {
     .addItem('⚙️ Install automatic trigger', 'instalarTriggerAutomatico')
     .addSeparator()
     .addItem('🤖 AI Assistant', 'abrirAsistenteAI')
-    .addItem('👋 Onboarding (avatar)', 'abrirOnboarding')
+    .addItem('👋 Onboarding (avatar) — in progress', 'abrirOnboarding')
     .addToUi();
 
   // Client menu (reduced options, operate on the "Gantt Meli" tab) — in English
@@ -92,7 +92,11 @@ function generarGanttConExcepciones(excepcionesJSON) { GanttLib.generarGanttConE
 function reejecutarCascadaConExcepciones(excepcionesJSON, tipoCascada) { GanttLib.reejecutarCascadaConExcepciones(excepcionesJSON, tipoCascada); }
 function copiarGanttACliente() { GanttLib.copiarGanttACliente(); }
 function abrirAsistenteAI() { GanttLib.abrirAsistenteAI(); }
-function abrirOnboarding() { GanttLib.abrirOnboarding(); }
+function abrirOnboarding() {
+  // Notice: feature still in progress (avoids setting a false expectation).
+  SpreadsheetApp.getUi().alert('👋 Onboarding (avatar)\n\nThis feature is still in progress. It will be available soon.');
+  GanttLib.abrirOnboarding();
+}
 function generarResumenEnDoc() { GanttLib.generarResumenEnDoc(); }
 function procesarMensajeBot(msg) { return GanttLib.procesarMensajeBot(msg); }
 
