@@ -3135,7 +3135,9 @@ function onEdit(e) {
   // regenerar el resumen. Una sola vez por edición (no por fila).
   // El desvío/resumen es SOLO del mundo GUT; Meli no lo usa.
   if (tocoDias && esGut) {
-    mostrarEstadoDesvio();
+    // ALERTA DE DESVÍO DE DÍAS DESACTIVADA (se percibía como spam).
+    // Para reactivar, descomentar la línea de abajo:
+    // mostrarEstadoDesvio();
     generarResumenEnDoc(true);
   }
 }
