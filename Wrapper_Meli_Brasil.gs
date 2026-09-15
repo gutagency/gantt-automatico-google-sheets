@@ -17,15 +17,12 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
 
-  // Submenu de cascatas (aba GUT): a data sob o cursor é a âncora (fica fixa).
-  // A direção é escolhida aqui, NÃO pela coluna onde está o cursor.
-  var cascatasGut = ui.createMenu('📅 Cascatas de datas (posicione o cursor em qualquer data a fixar)')
-    .addItem('⬇️ Cascata normal — Recalcular as seguintes', 'cascadaNormalDesdeFecha')
-    .addItem('⬆️ Cascata inversa — Recalcular as anteriores', 'cascadaInversaDesdeFecha');
-
   // Menu interno da agência (todas as opções) — em português
+  // Cascatas no primeiro nível (bem visíveis): a data sob o cursor é a âncora
+  // (fica fixa) e a direção é definida pela opção escolhida, NÃO pela coluna.
   ui.createMenu('🤖 Agente GUT')
-    .addSubMenu(cascatasGut)
+    .addItem('⬇️ Cascata normal — Recalcular as seguintes (cursor na data a fixar)', 'cascadaNormalDesdeFecha')
+    .addItem('⬆️ Cascata inversa — Recalcular as anteriores (cursor na data a fixar)', 'cascadaInversaDesdeFecha')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGantt')
     .addItem('🔄 Ler Gantt → Atualizar datas', 'leerGanttActualizarFechas')
@@ -38,14 +35,11 @@ function onOpen() {
     .addItem('👋 Onboarding (avatar) — em desenvolvimento', 'abrirOnboarding')
     .addToUi();
 
-  // Submenu de cascatas da aba "Gantt Meli" (layout ESQUEMA_MELI).
-  var cascatasMeli = ui.createMenu('📅 Cascatas de datas (posicione o cursor em qualquer data a fixar)')
-    .addItem('⬇️ Cascata normal — Recalcular as seguintes', 'cascadaNormalMeli')
-    .addItem('⬆️ Cascata inversa — Recalcular as anteriores', 'cascadaInversaMeli');
-
   // Menú do cliente (opções reduzidas, operam sobre a aba "Gantt Meli") — em português
+  // Cascatas no primeiro nível para que o cliente as veja de imediato.
   ui.createMenu('🤝 Agente Meli')
-    .addSubMenu(cascatasMeli)
+    .addItem('⬇️ Cascata normal — Recalcular as seguintes (cursor na data a fixar)', 'cascadaNormalMeli')
+    .addItem('⬆️ Cascata inversa — Recalcular as anteriores (cursor na data a fixar)', 'cascadaInversaMeli')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
     .addSeparator()

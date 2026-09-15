@@ -28,15 +28,13 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
 
-  // Date cascades submenu: the date under the cursor is the anchor (stays fixed).
-  // The direction is chosen here, NOT by the column the cursor is on.
-  var cascadasGut = ui.createMenu('📅 Date cascades (place the cursor on any date to lock)')
-    .addItem('⬇️ Normal cascade — Recalculate the following ones', 'cascadaNormalDesdeFecha')
-    .addItem('⬆️ Reverse cascade — Recalculate the previous ones', 'cascadaInversaDesdeFecha');
-
   // Internal agency menu (all options) — in English
+  // Cascades at the top level (clearly visible): the date under the cursor is
+  // the anchor (stays fixed) and the direction comes from the chosen option,
+  // NOT from the column the cursor is on.
   ui.createMenu('🤖 Agente GUT')
-    .addSubMenu(cascadasGut)
+    .addItem('⬇️ Normal cascade — Recalculate the following ones (cursor on the date to lock)', 'cascadaNormalDesdeFecha')
+    .addItem('⬆️ Reverse cascade — Recalculate the previous ones (cursor on the date to lock)', 'cascadaInversaDesdeFecha')
     .addSeparator()
     .addItem('📊 Generate Gantt in this document', 'generarGantt')
     .addItem('🔄 Read Gantt → Update dates', 'leerGanttActualizarFechas')

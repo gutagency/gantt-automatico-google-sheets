@@ -17,15 +17,12 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
 
-  // Submenu de cascatas: a data sob o cursor é a âncora (fica fixa).
-  // A direção é escolhida aqui, NÃO pela coluna onde está o cursor.
-  var cascatasGut = ui.createMenu('📅 Cascatas de datas (posicione o cursor em qualquer data a fixar)')
-    .addItem('⬇️ Cascata normal — Recalcular as seguintes', 'cascadaNormalDesdeFecha')
-    .addItem('⬆️ Cascata inversa — Recalcular as anteriores', 'cascadaInversaDesdeFecha');
-
   // Menu interno da agência (todas as opções) — em português
+  // Cascatas no primeiro nível (bem visíveis): a data sob o cursor é a âncora
+  // (fica fixa) e a direção é definida pela opção escolhida, NÃO pela coluna.
   ui.createMenu('🤖 Agente GUT')
-    .addSubMenu(cascatasGut)
+    .addItem('⬇️ Cascata normal — Recalcular as seguintes (cursor na data a fixar)', 'cascadaNormalDesdeFecha')
+    .addItem('⬆️ Cascata inversa — Recalcular as anteriores (cursor na data a fixar)', 'cascadaInversaDesdeFecha')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGantt')
     .addItem('🔄 Ler Gantt → Atualizar datas', 'leerGanttActualizarFechas')
