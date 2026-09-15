@@ -21,8 +21,8 @@ function onOpen() {
   // Cascatas no primeiro nível (bem visíveis): a data sob o cursor é a âncora
   // (fica fixa) e a direção é definida pela opção escolhida, NÃO pela coluna.
   ui.createMenu('🤖 Agente GUT')
-    .addItem('⬇️ Cascata normal — Recalcular as seguintes (a partir da Data Início)', 'cascadaNormalDesdeFecha')
-    .addItem('⬆️ Cascata inversa — Recalcular as anteriores (a partir da Data Fim)', 'cascadaInversaDesdeFecha')
+    .addItem('⬇️ Cascata normal — Recalcular as seguintes (a partir da data selecionada)', 'cascadaNormalDesdeFecha')
+    .addItem('⬆️ Cascata inversa — Recalcular as anteriores (a partir da data selecionada)', 'cascadaInversaDesdeFecha')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGantt')
     .addItem('🔄 Ler Gantt → Atualizar datas', 'leerGanttActualizarFechas')
@@ -38,8 +38,8 @@ function onOpen() {
   // Menú do cliente (opções reduzidas, operam sobre a aba "Gantt Meli") — em português
   // Cascatas no primeiro nível para que o cliente as veja de imediato.
   ui.createMenu('🤝 Agente Meli')
-    .addItem('⬇️ Cascata normal — Recalcular as seguintes (a partir da Data Início)', 'cascadaNormalMeli')
-    .addItem('⬆️ Cascata inversa — Recalcular as anteriores (a partir da Data Fim)', 'cascadaInversaMeli')
+    .addItem('⬇️ Cascata normal — Recalcular as seguintes (a partir da data selecionada)', 'cascadaNormalMeli')
+    .addItem('⬆️ Cascata inversa — Recalcular as anteriores (a partir da data selecionada)', 'cascadaInversaMeli')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
     .addSeparator()

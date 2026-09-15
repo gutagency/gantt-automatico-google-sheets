@@ -33,8 +33,8 @@ function onOpen() {
   // the anchor (stays fixed) and the direction comes from the chosen option,
   // NOT from the column the cursor is on.
   ui.createMenu('🤖 Agente GUT')
-    .addItem('⬇️ Normal cascade — Recalculate the following ones (from the Start Date)', 'cascadaNormalDesdeFecha')
-    .addItem('⬆️ Reverse cascade — Recalculate the previous ones (from the End Date)', 'cascadaInversaDesdeFecha')
+    .addItem('⬇️ Normal cascade — Recalculate the following ones (from the selected date)', 'cascadaNormalDesdeFecha')
+    .addItem('⬆️ Reverse cascade — Recalculate the previous ones (from the selected date)', 'cascadaInversaDesdeFecha')
     .addSeparator()
     .addItem('📊 Generate Gantt in this document', 'generarGantt')
     .addItem('🔄 Read Gantt → Update dates', 'leerGanttActualizarFechas')
