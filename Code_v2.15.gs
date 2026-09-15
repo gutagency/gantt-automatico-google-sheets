@@ -1182,6 +1182,197 @@ function cascadaDesdeCursorSubgrupo(nombreHoja) {
 }
 
 // ============================================
+// CASCADAS DE FECHAS DESDE LA FECHA DEL CURSOR (v2.16)
+// La fecha donde está ubicado el cursor es el ANCLA: queda fija.
+// La DIRECCIÓN la define la opción del menú, NO la columna del cursor.
+//   - cascadaNormalDesdeFecha():  recalcula las tareas SIGUIENTES (hacia abajo)
+//   - cascadaInversaDesdeFecha(): recalcula las tareas ANTERIORES (hacia arriba)
+// Corta en la primera fila sin días válidos, vacía o agrupador.
+// Requisito: la fila del cursor debe tener Días con un número.
+// ============================================
+
+// Valida el contexto del cursor en la hoja GUT. Devuelve los datos base o null.
+function obtenerContextoCursorGut(nombreHoja) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hojaNombre = nombreHoja || CONFIG.HOJA_CREATIVO;
+  var hoja = ss.getSheetByName(hojaNombre);
+  var hojaActiva = ss.getActiveSheet();
+
+  if (!hoja) {
+    SpreadsheetApp.getUi().alert('No se encontró la hoja "' + hojaNombre + '"');
+    return null;
+  }
+  if (hojaActiva.getName() !== hojaNombre) {
+    SpreadsheetApp.getUi().alert('Por favor, seleccioná una celda en la hoja "' + hojaNombre + '"');
+    return null;
+  }
+
+  var celda = ss.getActiveCell();
+  var fila = celda.getRow();
+  var columna = celda.getColumn();
+
+  if (fila < 2) {
+    SpreadsheetApp.getUi().alert('Ubicá el cursor en una fila de actividad (fila 2 o mayor).');
+    return null;
+  }
+  // El cursor debe estar sobre una fecha: C (Inicio) o D (Fin).
+  if (columna !== 3 && columna !== 4) {
+    SpreadsheetApp.getUi().alert('Ubicá el cursor en una celda de fecha: Fecha Inicio (C) o Fecha Fin (D).');
+    return null;
+  }
+
+  var actividad = hoja.getRange(fila, 1).getValue();
+  if (!actividad || actividad.toString().trim() === '') {
+    SpreadsheetApp.getUi().alert('La fila del cursor no tiene actividad.');
+    return null;
+  }
+
+  var dias = parseInt(hoja.getRange(fila, 2).getValue());
+  if (isNaN(dias)) {
+    SpreadsheetApp.getUi().alert('La fila del cursor debe tener la cantidad de Días cargada (un número).');
+    return null;
+  }
+
+  var fechaAncla = convertirAFecha(celda.getValue());
+  if (!fechaAncla) {
+    SpreadsheetApp.getUi().alert('La celda del cursor no tiene una fecha válida.');
+    return null;
+  }
+
+  return {
+    hoja: hoja,
+    hojaNombre: hojaNombre,
+    fila: fila,
+    columna: columna,
+    dias: dias,
+    fechaAncla: fechaAncla
+  };
+}
+
+// GUT — Recalcula las tareas SIGUIENTES desde la fecha del cursor.
+function cascadaNormalDesdeFecha(nombreHoja) {
+  var ctx = obtenerContextoCursorGut(nombreHoja);
+  if (!ctx) return;
+
+  var hoja = ctx.hoja;
+  var feriados = obtenerFeriados();
+  var excAncla = parsearExcepcionesColE(hoja.getRange(ctx.fila, 5).getValue());
+  var diasAncla = (ctx.dias < 1) ? 1 : ctx.dias;
+
+  // Punto de partida hacia abajo: la Fecha Fin de la fila ancla.
+  var finAncla;
+  if (ctx.columna === 4) {
+    finAncla = ctx.fechaAncla;                 // cursor en Fin → queda fijo
+  } else {
+    // Cursor en Inicio → se fija el Inicio y se deriva el Fin con los Días.
+    finAncla = sumarDiasHabilesConExc(ctx.fechaAncla, diasAncla - 1, feriados, excAncla);
+    hoja.getRange(ctx.fila, 4).setValue(finAncla);
+  }
+
+  var ultimaFila = hoja.getLastRow();
+  var fechaInicioActual = siguienteDiaHabilConExc(finAncla, feriados, excAncla);
+  var filasActualizadas = 0;
+
+  for (var fila = ctx.fila + 1; fila <= ultimaFila; fila++) {
+    var actividad = hoja.getRange(fila, 1).getValue();
+    if (!actividad || actividad.toString().trim() === '') break;
+
+    var dias = parseInt(hoja.getRange(fila, 2).getValue());
+    if (isNaN(dias)) break;   // fila sin días o agrupador → corta
+
+    if (dias === 0) {
+      // Hito: mismo día que el Fin de la fila de arriba.
+      var finArriba = hoja.getRange(fila - 1, 4).getValue();
+      if (finArriba instanceof Date) {
+        hoja.getRange(fila, 3).setValue(finArriba);
+        hoja.getRange(fila, 4).setValue(finArriba);
+      }
+      filasActualizadas++;
+      continue;
+    }
+
+    if (dias < 1) dias = 1;
+    var exc = parsearExcepcionesColE(hoja.getRange(fila, 5).getValue());
+    var nuevoInicio = fechaInicioActual;
+    var nuevoFin = sumarDiasHabilesConExc(nuevoInicio, dias - 1, feriados, exc);
+
+    hoja.getRange(fila, 3).setValue(nuevoInicio);
+    hoja.getRange(fila, 4).setValue(nuevoFin);
+
+    fechaInicioActual = siguienteDiaHabilConExc(nuevoFin, feriados, exc);
+    filasActualizadas++;
+  }
+
+  formatearFechasCreativo(ctx.hojaNombre);
+  marcarSuperposicionEntrada(hoja);
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Cascada normal: ' + filasActualizadas + ' tarea(s) recalculadas.', '✅ Listo', 5);
+  registrarLog('Cascada normal (desde fecha)',
+    filasActualizadas + ' tarea(s) recalculadas (' + ctx.hojaNombre + ', fila ancla ' + ctx.fila + ')');
+}
+
+// GUT — Recalcula las tareas ANTERIORES desde la fecha del cursor.
+function cascadaInversaDesdeFecha(nombreHoja) {
+  var ctx = obtenerContextoCursorGut(nombreHoja);
+  if (!ctx) return;
+
+  var hoja = ctx.hoja;
+  var feriados = obtenerFeriados();
+  var excAncla = parsearExcepcionesColE(hoja.getRange(ctx.fila, 5).getValue());
+  var diasAncla = (ctx.dias < 1) ? 1 : ctx.dias;
+
+  // Punto de partida hacia arriba: la Fecha Inicio de la fila ancla.
+  var inicioAncla;
+  if (ctx.columna === 3) {
+    inicioAncla = ctx.fechaAncla;              // cursor en Inicio → queda fijo
+  } else {
+    // Cursor en Fin → se fija el Fin y se deriva el Inicio con los Días.
+    inicioAncla = restarDiasHabilesConExc(ctx.fechaAncla, diasAncla - 1, feriados, excAncla);
+    hoja.getRange(ctx.fila, 3).setValue(inicioAncla);
+  }
+
+  var fechaFinActual = diaHabilAnteriorConExc(inicioAncla, feriados, excAncla);
+  var filasActualizadas = 0;
+
+  for (var fila = ctx.fila - 1; fila >= 2; fila--) {
+    var actividad = hoja.getRange(fila, 1).getValue();
+    if (!actividad || actividad.toString().trim() === '') break;
+
+    var dias = parseInt(hoja.getRange(fila, 2).getValue());
+    if (isNaN(dias)) break;   // fila sin días o agrupador → corta
+
+    if (dias === 0) {
+      // Hito: mismo día que el Fin de la fila de abajo.
+      var finAbajo = hoja.getRange(fila + 1, 4).getValue();
+      if (finAbajo instanceof Date) {
+        hoja.getRange(fila, 3).setValue(finAbajo);
+        hoja.getRange(fila, 4).setValue(finAbajo);
+      }
+      filasActualizadas++;
+      continue;
+    }
+
+    if (dias < 1) dias = 1;
+    var exc = parsearExcepcionesColE(hoja.getRange(fila, 5).getValue());
+    var nuevoFin = fechaFinActual;
+    var nuevoInicio = restarDiasHabilesConExc(nuevoFin, dias - 1, feriados, exc);
+
+    hoja.getRange(fila, 3).setValue(nuevoInicio);
+    hoja.getRange(fila, 4).setValue(nuevoFin);
+
+    fechaFinActual = diaHabilAnteriorConExc(nuevoInicio, feriados, exc);
+    filasActualizadas++;
+  }
+
+  formatearFechasCreativo(ctx.hojaNombre);
+  marcarSuperposicionEntrada(hoja);
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Cascada inversa: ' + filasActualizadas + ' tarea(s) recalculadas.', '✅ Listo', 5);
+  registrarLog('Cascada inversa (desde fecha)',
+    filasActualizadas + ' tarea(s) recalculadas (' + ctx.hojaNombre + ', fila ancla ' + ctx.fila + ')');
+}
+
+// ============================================
 // DETERMINAR COLOR DE ACTIVIDAD
 // ============================================
 
@@ -1680,6 +1871,165 @@ function cascadaNormalMeliInterna() {
   hoja.getRange(filaIni, ESQUEMA_MELI.COL_INICIO, ultimaFila - filaIni + 1, 2).setNumberFormat('dd/MM/yyyy');
   SpreadsheetApp.getActiveSpreadsheet().toast('Cascata normal Meli: ' + procesadas + ' tarefa(s).', '✅ Pronto', 6);
   registrarLog('Cascada normal', CONFIG.HOJA_MELI + ' (' + procesadas + ' tareas)');
+}
+
+// ============================================
+// CASCADAS DE FECHAS DESDE LA FECHA DEL CURSOR — MELI (v2.16)
+// Mismo criterio que en GUT, pero con el layout de ESQUEMA_MELI
+// (Dias=D, Início=E, Fim=F, tareas desde la fila 8).
+// La fecha del cursor es el ANCLA (queda fija) y la dirección la define
+// la opción del menú. Corta en agrupador, fila vacía o fila sin días.
+// ============================================
+
+// Valida el contexto del cursor en la hoja Meli. Devuelve los datos base o null.
+function obtenerContextoCursorMeli() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_MELI);
+  var hojaActiva = ss.getActiveSheet();
+
+  if (!hoja) {
+    SpreadsheetApp.getUi().alert('Não foi encontrada a aba "' + CONFIG.HOJA_MELI + '".');
+    return null;
+  }
+  if (hojaActiva.getName() !== CONFIG.HOJA_MELI) {
+    SpreadsheetApp.getUi().alert('Selecione uma célula na aba "' + CONFIG.HOJA_MELI + '".');
+    return null;
+  }
+
+  var celda = ss.getActiveCell();
+  var fila = celda.getRow();
+  var columna = celda.getColumn();
+
+  if (fila < ESQUEMA_MELI.FILA_INICIO_TAREAS) {
+    SpreadsheetApp.getUi().alert('Posicione o cursor em uma linha de tarefa (linha ' +
+      ESQUEMA_MELI.FILA_INICIO_TAREAS + ' ou maior).');
+    return null;
+  }
+  if (columna !== ESQUEMA_MELI.COL_INICIO && columna !== ESQUEMA_MELI.COL_FIN) {
+    SpreadsheetApp.getUi().alert('Posicione o cursor em uma célula de data: Início ou Fim.');
+    return null;
+  }
+
+  var macro = hoja.getRange(fila, ESQUEMA_MELI.COL_MACRO).getValue();
+  var tarea = hoja.getRange(fila, ESQUEMA_MELI.COL_TAREA).getValue();
+  if (esAgrupadorMeli(macro, tarea) || !tarea || tarea.toString().trim() === '') {
+    SpreadsheetApp.getUi().alert('A linha do cursor não é uma tarefa válida.');
+    return null;
+  }
+
+  var dias = parseInt(hoja.getRange(fila, ESQUEMA_MELI.COL_DIAS).getValue());
+  if (isNaN(dias)) {
+    SpreadsheetApp.getUi().alert('A linha do cursor precisa ter a quantidade de Dias preenchida (um número).');
+    return null;
+  }
+
+  var fechaAncla = convertirAFecha(celda.getValue());
+  if (!fechaAncla) {
+    SpreadsheetApp.getUi().alert('A célula do cursor não tem uma data válida.');
+    return null;
+  }
+
+  return { hoja: hoja, fila: fila, columna: columna, dias: dias, fechaAncla: fechaAncla };
+}
+
+// MELI — Recalcula las tareas SIGUIENTES desde la fecha del cursor.
+function cascadaNormalDesdeFechaMeli() {
+  var ctx = obtenerContextoCursorMeli();
+  if (!ctx) return;
+
+  var hoja = ctx.hoja;
+  var feriados = obtenerFeriados();
+  var diasAncla = (ctx.dias < 1) ? 1 : ctx.dias;
+
+  // Punto de partida hacia abajo: el Fim de la fila ancla.
+  var finAncla;
+  if (ctx.columna === ESQUEMA_MELI.COL_FIN) {
+    finAncla = ctx.fechaAncla;                 // cursor en Fim → queda fijo
+  } else {
+    // Cursor en Início → se fija el Início y se deriva el Fim con los Dias.
+    finAncla = sumarDiasHabiles(ctx.fechaAncla, diasAncla - 1, feriados);
+    hoja.getRange(ctx.fila, ESQUEMA_MELI.COL_FIN).setValue(finAncla);
+  }
+
+  var ultimaFila = hoja.getLastRow();
+  var fechaInicioActual = siguienteDiaHabil(finAncla, feriados);
+  var procesadas = 0;
+
+  for (var fila = ctx.fila + 1; fila <= ultimaFila; fila++) {
+    var macro = hoja.getRange(fila, ESQUEMA_MELI.COL_MACRO).getValue();
+    var tarea = hoja.getRange(fila, ESQUEMA_MELI.COL_TAREA).getValue();
+    if (esAgrupadorMeli(macro, tarea)) break;
+    if (!tarea || tarea.toString().trim() === '') break;
+
+    var dias = parseInt(hoja.getRange(fila, ESQUEMA_MELI.COL_DIAS).getValue());
+    if (isNaN(dias) || dias < 1) break;
+
+    var nuevoInicio = fechaInicioActual;
+    var nuevoFin = sumarDiasHabiles(nuevoInicio, dias - 1, feriados);
+
+    hoja.getRange(fila, ESQUEMA_MELI.COL_INICIO).setValue(nuevoInicio);
+    hoja.getRange(fila, ESQUEMA_MELI.COL_FIN).setValue(nuevoFin);
+
+    fechaInicioActual = siguienteDiaHabil(nuevoFin, feriados);
+    procesadas++;
+  }
+
+  hoja.getRange(ctx.fila, ESQUEMA_MELI.COL_INICIO, ultimaFila - ctx.fila + 1, 2)
+    .setNumberFormat('dd/MM/yyyy');
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Cascata normal: ' + procesadas + ' tarefa(s) recalculada(s).', '✅ Pronto', 6);
+  registrarLog('Cascada normal (desde fecha)',
+    CONFIG.HOJA_MELI + ' (' + procesadas + ' tareas, fila ancla ' + ctx.fila + ')');
+}
+
+// MELI — Recalcula las tareas ANTERIORES desde la fecha del cursor.
+function cascadaInversaDesdeFechaMeli() {
+  var ctx = obtenerContextoCursorMeli();
+  if (!ctx) return;
+
+  var hoja = ctx.hoja;
+  var feriados = obtenerFeriados();
+  var diasAncla = (ctx.dias < 1) ? 1 : ctx.dias;
+
+  // Punto de partida hacia arriba: el Início de la fila ancla.
+  var inicioAncla;
+  if (ctx.columna === ESQUEMA_MELI.COL_INICIO) {
+    inicioAncla = ctx.fechaAncla;              // cursor en Início → queda fijo
+  } else {
+    // Cursor en Fim → se fija el Fim y se deriva el Início con los Dias.
+    inicioAncla = restarDiasHabiles(ctx.fechaAncla, diasAncla - 1, feriados);
+    hoja.getRange(ctx.fila, ESQUEMA_MELI.COL_INICIO).setValue(inicioAncla);
+  }
+
+  var filaIni = ESQUEMA_MELI.FILA_INICIO_TAREAS;
+  var fechaFinActual = diaHabilAnterior(inicioAncla, feriados);
+  var procesadas = 0;
+
+  for (var fila = ctx.fila - 1; fila >= filaIni; fila--) {
+    var macro = hoja.getRange(fila, ESQUEMA_MELI.COL_MACRO).getValue();
+    var tarea = hoja.getRange(fila, ESQUEMA_MELI.COL_TAREA).getValue();
+    if (esAgrupadorMeli(macro, tarea)) break;
+    if (!tarea || tarea.toString().trim() === '') break;
+
+    var dias = parseInt(hoja.getRange(fila, ESQUEMA_MELI.COL_DIAS).getValue());
+    if (isNaN(dias) || dias < 1) break;
+
+    var nuevoFin = fechaFinActual;
+    var nuevoInicio = restarDiasHabiles(nuevoFin, dias - 1, feriados);
+
+    hoja.getRange(fila, ESQUEMA_MELI.COL_INICIO).setValue(nuevoInicio);
+    hoja.getRange(fila, ESQUEMA_MELI.COL_FIN).setValue(nuevoFin);
+
+    fechaFinActual = diaHabilAnterior(nuevoInicio, feriados);
+    procesadas++;
+  }
+
+  hoja.getRange(filaIni, ESQUEMA_MELI.COL_INICIO, ctx.fila - filaIni + 1, 2)
+    .setNumberFormat('dd/MM/yyyy');
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    'Cascata inversa: ' + procesadas + ' tarefa(s) recalculada(s).', '✅ Pronto', 6);
+  registrarLog('Cascada inversa (desde fecha)',
+    CONFIG.HOJA_MELI + ' (' + procesadas + ' tareas, fila ancla ' + ctx.fila + ')');
 }
 
 // GENERAR GANTT INLINE MELI: dibuja el timeline dentro de "Gantt Meli",
@@ -3135,9 +3485,7 @@ function onEdit(e) {
   // regenerar el resumen. Una sola vez por edición (no por fila).
   // El desvío/resumen es SOLO del mundo GUT; Meli no lo usa.
   if (tocoDias && esGut) {
-    // ALERTA DE DESVÍO DE DÍAS DESACTIVADA (se percibía como spam).
-    // Para reactivar, descomentar la línea de abajo:
-    // mostrarEstadoDesvio();
+    mostrarEstadoDesvio();
     generarResumenEnDoc(true);
   }
 }

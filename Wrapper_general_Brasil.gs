@@ -17,11 +17,15 @@
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
 
+  // Submenu de cascatas: a data sob o cursor é a âncora (fica fixa).
+  // A direção é escolhida aqui, NÃO pela coluna onde está o cursor.
+  var cascatasGut = ui.createMenu('📅 Cascatas de datas (posicione o cursor em qualquer data a fixar)')
+    .addItem('⬇️ Cascata normal — Recalcular as seguintes', 'cascadaNormalDesdeFecha')
+    .addItem('⬆️ Cascata inversa — Recalcular as anteriores', 'cascadaInversaDesdeFecha');
+
   // Menu interno da agência (todas as opções) — em português
   ui.createMenu('🤖 Agente GUT')
-    .addItem('⬆️ Cascata inversa — colocar Data Fim na última tarefa da etapa', 'cascadaInversaEtapaActual')
-    .addItem('⬇️ Cascata normal — colocar Data Início na primeira tarefa da etapa', 'cascadaNormalEtapaActual')
-    .addItem('↕️ Cascata a partir da posição do cursor. Na Data Início cascateia para cima, na Data Fim cascateia para baixo.', 'cascadaDesdeCursorSubgrupo')
+    .addSubMenu(cascatasGut)
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGantt')
     .addItem('🔄 Ler Gantt → Atualizar datas', 'leerGanttActualizarFechas')
@@ -32,16 +36,6 @@ function onOpen() {
     .addSeparator()
     .addItem('🤖 Assistente AI', 'abrirAsistenteAI')
     .addItem('👋 Onboarding (avatar) — em desenvolvimento', 'abrirOnboarding')
-    .addToUi();
-
-  // Menú do cliente (opções reduzidas, operam sobre a aba "Gantt Meli") — em português
-  ui.createMenu('🤝 Agente Meli')
-    .addItem('⬆️ Cascata inversa — a partir de "Fim de veiculação"', 'cascadaInversaMeli')
-    .addItem('⬇️ Cascata normal — a partir da Data Início da primeira tarefa', 'cascadaNormalMeli')
-    .addSeparator()
-    .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
-    .addSeparator()
-    .addItem('🤖 Assistente AI', 'abrirAsistenteAI')
     .addToUi();
 }
 
@@ -71,10 +65,10 @@ function cascadaNormalSubgrupos() { GanttLib.cascadaNormalSubgrupos(); }
 function cascadaDesdeCursorSubgrupo() { GanttLib.cascadaDesdeCursorSubgrupo(); }
 function cascadaInversaEtapaActual() { GanttLib.cascadaInversaEtapaActual(); }
 function cascadaNormalEtapaActual() { GanttLib.cascadaNormalEtapaActual(); }
-// Stubs Meli: funciones propias de Meli (layout ESQUEMA_MELI, hoja "Gantt Meli")
-function cascadaInversaMeli() { GanttLib.cascadaInversaMeliInterna(); }
-function cascadaNormalMeli() { GanttLib.cascadaNormalMeliInterna(); }
-function generarGanttMeli() { GanttLib.generarGanttInlineMeli(); }
+// Cascadas desde la fecha del cursor (las que usa el menú): la fecha bajo el
+// cursor queda fija y la dirección la define la opción elegida.
+function cascadaNormalDesdeFecha() { GanttLib.cascadaNormalDesdeFecha(); }
+function cascadaInversaDesdeFecha() { GanttLib.cascadaInversaDesdeFecha(); }
 function generarGantt() { GanttLib.generarGantt(); }
 function leerGanttActualizarFechas() { GanttLib.leerGanttActualizarFechas(); }
 function generarGanttConExcepciones(excepcionesJSON) { GanttLib.generarGanttConExcepciones(excepcionesJSON); }
