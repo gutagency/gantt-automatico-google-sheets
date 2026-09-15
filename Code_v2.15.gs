@@ -1192,7 +1192,10 @@ function cascadaDesdeCursorSubgrupo(nombreHoja) {
 // ============================================
 
 // Valida el contexto del cursor en la hoja GUT. Devuelve los datos base o null.
-function obtenerContextoCursorGut(nombreHoja) {
+// columnaPorDefecto: columna de fecha a usar como ancla cuando el cursor NO
+// está sobre una celda de fecha (3 = Inicio para cascada normal, 4 = Fin para
+// cascada inversa). Así el usuario puede pararse en cualquier celda de la fila.
+function obtenerContextoCursorGut(nombreHoja, columnaPorDefecto) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hojaNombre = nombreHoja || CONFIG.HOJA_CREATIVO;
   var hoja = ss.getSheetByName(hojaNombre);
@@ -1215,10 +1218,11 @@ function obtenerContextoCursorGut(nombreHoja) {
     SpreadsheetApp.getUi().alert('Ubicá el cursor en una fila de actividad (fila 2 o mayor).');
     return null;
   }
-  // El cursor debe estar sobre una fecha: C (Inicio) o D (Fin).
+  // Si el cursor está sobre una fecha (C=Inicio o D=Fin), esa es el ancla.
+  // Si está en cualquier otra celda de la fila, se usa la fecha por defecto
+  // de la dirección elegida.
   if (columna !== 3 && columna !== 4) {
-    SpreadsheetApp.getUi().alert('Ubicá el cursor en una celda de fecha: Fecha Inicio (C) o Fecha Fin (D).');
-    return null;
+    columna = columnaPorDefecto || 3;
   }
 
   var actividad = hoja.getRange(fila, 1).getValue();
@@ -1233,9 +1237,12 @@ function obtenerContextoCursorGut(nombreHoja) {
     return null;
   }
 
-  var fechaAncla = convertirAFecha(celda.getValue());
+  // La fecha ancla se lee de la columna determinada arriba (la del cursor o
+  // la por defecto), no de la celda activa.
+  var fechaAncla = convertirAFecha(hoja.getRange(fila, columna).getValue());
   if (!fechaAncla) {
-    SpreadsheetApp.getUi().alert('La celda del cursor no tiene una fecha válida.');
+    var etiqueta = (columna === 3) ? 'Fecha Inicio' : 'Fecha Fin';
+    SpreadsheetApp.getUi().alert('La fila del cursor no tiene una ' + etiqueta + ' válida.');
     return null;
   }
 
@@ -1251,7 +1258,8 @@ function obtenerContextoCursorGut(nombreHoja) {
 
 // GUT — Recalcula las tareas SIGUIENTES desde la fecha del cursor.
 function cascadaNormalDesdeFecha(nombreHoja) {
-  var ctx = obtenerContextoCursorGut(nombreHoja);
+  // Sin cursor sobre una fecha, el ancla por defecto es la Fecha Inicio (C).
+  var ctx = obtenerContextoCursorGut(nombreHoja, 3);
   if (!ctx) return;
 
   var hoja = ctx.hoja;
@@ -1313,7 +1321,8 @@ function cascadaNormalDesdeFecha(nombreHoja) {
 
 // GUT — Recalcula las tareas ANTERIORES desde la fecha del cursor.
 function cascadaInversaDesdeFecha(nombreHoja) {
-  var ctx = obtenerContextoCursorGut(nombreHoja);
+  // Sin cursor sobre una fecha, el ancla por defecto es la Fecha Fin (D).
+  var ctx = obtenerContextoCursorGut(nombreHoja, 4);
   if (!ctx) return;
 
   var hoja = ctx.hoja;
@@ -1882,7 +1891,10 @@ function cascadaNormalMeliInterna() {
 // ============================================
 
 // Valida el contexto del cursor en la hoja Meli. Devuelve los datos base o null.
-function obtenerContextoCursorMeli() {
+// columnaPorDefecto: columna de fecha a usar como ancla cuando el cursor NO
+// está sobre una celda de fecha (COL_INICIO para la cascada normal, COL_FIN
+// para la inversa). Así el cliente puede pararse en cualquier celda de la fila.
+function obtenerContextoCursorMeli(columnaPorDefecto) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hoja = ss.getSheetByName(CONFIG.HOJA_MELI);
   var hojaActiva = ss.getActiveSheet();
@@ -1905,9 +1917,10 @@ function obtenerContextoCursorMeli() {
       ESQUEMA_MELI.FILA_INICIO_TAREAS + ' ou maior).');
     return null;
   }
+  // Se o cursor estiver sobre uma data (Início ou Fim), essa é a âncora.
+  // Em qualquer outra célula da linha, usa-se a data padrão da direção.
   if (columna !== ESQUEMA_MELI.COL_INICIO && columna !== ESQUEMA_MELI.COL_FIN) {
-    SpreadsheetApp.getUi().alert('Posicione o cursor em uma célula de data: Início ou Fim.');
-    return null;
+    columna = columnaPorDefecto || ESQUEMA_MELI.COL_INICIO;
   }
 
   var macro = hoja.getRange(fila, ESQUEMA_MELI.COL_MACRO).getValue();
@@ -1923,9 +1936,11 @@ function obtenerContextoCursorMeli() {
     return null;
   }
 
-  var fechaAncla = convertirAFecha(celda.getValue());
+  // A data âncora é lida da coluna definida acima (a do cursor ou a padrão).
+  var fechaAncla = convertirAFecha(hoja.getRange(fila, columna).getValue());
   if (!fechaAncla) {
-    SpreadsheetApp.getUi().alert('A célula do cursor não tem uma data válida.');
+    var etiqueta = (columna === ESQUEMA_MELI.COL_INICIO) ? 'Início' : 'Fim';
+    SpreadsheetApp.getUi().alert('A linha do cursor não tem uma data de ' + etiqueta + ' válida.');
     return null;
   }
 
@@ -1934,7 +1949,8 @@ function obtenerContextoCursorMeli() {
 
 // MELI — Recalcula las tareas SIGUIENTES desde la fecha del cursor.
 function cascadaNormalDesdeFechaMeli() {
-  var ctx = obtenerContextoCursorMeli();
+  // Sin cursor sobre una fecha, el ancla por defecto es el Início (E).
+  var ctx = obtenerContextoCursorMeli(ESQUEMA_MELI.COL_INICIO);
   if (!ctx) return;
 
   var hoja = ctx.hoja;
@@ -1984,7 +2000,8 @@ function cascadaNormalDesdeFechaMeli() {
 
 // MELI — Recalcula las tareas ANTERIORES desde la fecha del cursor.
 function cascadaInversaDesdeFechaMeli() {
-  var ctx = obtenerContextoCursorMeli();
+  // Sin cursor sobre una fecha, el ancla por defecto es el Fim (F).
+  var ctx = obtenerContextoCursorMeli(ESQUEMA_MELI.COL_FIN);
   if (!ctx) return;
 
   var hoja = ctx.hoja;
