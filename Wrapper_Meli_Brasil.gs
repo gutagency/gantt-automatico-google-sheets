@@ -47,8 +47,6 @@ function onOpen() {
   ui.createMenu('🤝 Agente Meli')
     .addSubMenu(cascatasMeli)
     .addSeparator()
-    .addItem('⬆️ Cascata inversa a partir de "Fim de veiculação"', 'cascadaInversaMeliFimVeiculacao')
-    .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
     .addSeparator()
     .addItem('🤖 Assistente AI', 'abrirAsistenteAI')
@@ -87,8 +85,11 @@ function cascadaInversaDesdeFecha() { GanttLib.cascadaInversaDesdeFecha(); }
 // Stubs Meli: cascadas desde la fecha del cursor sobre la hoja "Gantt Meli".
 function cascadaNormalMeli() { GanttLib.cascadaNormalDesdeFechaMeli(); }
 function cascadaInversaMeli() { GanttLib.cascadaInversaDesdeFechaMeli(); }
-// Cascada inversa anclada en "Fim de veiculação" (B5), fuera de la lista de tareas.
-function cascadaInversaMeliFimVeiculacao() { GanttLib.cascadaInversaMeliInterna(); }
+// Cascada inversa anclada en "Fim de veiculação" (B5): DESACTIVADA del menú.
+// El ancla en una celda fija es frágil (si el cliente agrega o reordena filas,
+// la referencia apunta a otra celda). Ahora todas las fechas se tratan igual:
+// el usuario se ubica en la fecha y elige la dirección.
+// function cascadaInversaMeliFimVeiculacao() { GanttLib.cascadaInversaMeliInterna(); }
 function generarGanttMeli() { GanttLib.generarGanttInlineMeli(); }
 function generarGantt() { GanttLib.generarGantt(); }
 function leerGanttActualizarFechas() { GanttLib.leerGanttActualizarFechas(); }
