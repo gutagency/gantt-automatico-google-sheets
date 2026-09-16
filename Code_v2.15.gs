@@ -3869,18 +3869,21 @@ function copiarGanttACliente() {
     return;
   }
   
-  var hojaGanttOrigen = ss.getSheetByName(CONFIG.HOJA_GANTT);
+  // Se copia la hoja "Gantt GUT" completa (datos + timeline inline), que es el
+  // único Gantt de GUT desde que la tab "Gantt" separada quedó desactivada.
+  var hojaGanttOrigen = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
   if (!hojaGanttOrigen) {
-    SpreadsheetApp.getUi().alert('Error: No se encontró la hoja "Gantt" en este documento. Generá el Gantt primero.');
+    SpreadsheetApp.getUi().alert('Error: No se encontró la hoja "' + CONFIG.HOJA_CREATIVO + '" en este documento.');
     return;
   }
   
   try {
     var ssDestino = SpreadsheetApp.openById(idCliente);
     
-    var hojaGanttDestino = ssDestino.getSheetByName('Gantt');
+    var nombreHojaDestino = CONFIG.HOJA_CREATIVO;
+    var hojaGanttDestino = ssDestino.getSheetByName(nombreHojaDestino);
     if (!hojaGanttDestino) {
-      hojaGanttDestino = ssDestino.insertSheet('Gantt');
+      hojaGanttDestino = ssDestino.insertSheet(nombreHojaDestino);
     }
     
     // Limpiar contenido y formatos de la hoja destino
@@ -3896,6 +3899,9 @@ function copiarGanttACliente() {
       var fondos = hojaGanttOrigen.getRange(1, 1, ultimaFila, ultimaCol).getBackgrounds();
       var coloresTexto = hojaGanttOrigen.getRange(1, 1, ultimaFila, ultimaCol).getFontColors();
       var pesos = hojaGanttOrigen.getRange(1, 1, ultimaFila, ultimaCol).getFontWeights();
+      // Formatos de número: necesarios para que las fechas se vean dd/MM/yyyy
+      // en el documento del cliente y no como número de serie.
+      var formatos = hojaGanttOrigen.getRange(1, 1, ultimaFila, ultimaCol).getNumberFormats();
       
       // Ajustar tamaño de la hoja destino
       if (hojaGanttDestino.getMaxRows() < ultimaFila) {
@@ -3909,6 +3915,7 @@ function copiarGanttACliente() {
       hojaGanttDestino.getRange(1, 1, ultimaFila, ultimaCol).setBackgrounds(fondos);
       hojaGanttDestino.getRange(1, 1, ultimaFila, ultimaCol).setFontColors(coloresTexto);
       hojaGanttDestino.getRange(1, 1, ultimaFila, ultimaCol).setFontWeights(pesos);
+      hojaGanttDestino.getRange(1, 1, ultimaFila, ultimaCol).setNumberFormats(formatos);
       
       // Copiar anchos de columna
       for (var c = 1; c <= ultimaCol; c++) {
@@ -3920,7 +3927,7 @@ function copiarGanttACliente() {
       hojaGanttDestino.setFrozenColumns(hojaGanttOrigen.getFrozenColumns());
     }
     
-    SpreadsheetApp.getUi().alert('✅ Gantt copiado exitosamente al spreadsheet del cliente.');
+    SpreadsheetApp.getUi().alert('✅ "' + CONFIG.HOJA_CREATIVO + '" copiado exitosamente al spreadsheet del cliente.');
     
   } catch (error) {
     SpreadsheetApp.getUi().alert('Error al copiar: ' + error.message + '\n\nVerificá que tenés acceso de edición al spreadsheet del cliente.');
