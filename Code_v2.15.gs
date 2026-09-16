@@ -2538,7 +2538,7 @@ function generarGanttInterno(feriados, excepciones) {
   hojaGantt.setFrozenColumns(1);
   
   formatearFechasCreativo();
-  generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriados, meses, diasSemana);
+  generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriados, meses, diasSemana, diasSemanaCorto);
   
   // PASO FINAL: Forzar pintado de excepciones DENTRO del rango (último paso, gana sobre todo)
   var pintadas = 0;
@@ -2721,7 +2721,9 @@ function debugPintarExcepcion() {
 // GENERAR TIMELINE INLINE EN ENTRADA PROCESO CREATIVO
 // ============================================
 
-function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriados, meses, diasSemana) {
+// diasSemanaCorto (opcional): iniciales del día de la semana en el idioma
+// activo (ES: D/L/M/M/J/V/S — PT: D/S/T/Q/Q/S/S). Se usan en el header.
+function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriados, meses, diasSemana, diasSemanaCorto) {
   if (!hojaCreativo) return;
   
   var ultimaFila = hojaCreativo.getLastRow();
@@ -2759,7 +2761,11 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
   var headerFechas = [];
   for (var j = 0; j < fechas.length; j++) {
     var f = fechas[j];
-    var inicialDia = diasSemana[f.getDay()].charAt(0);
+    // Inicial del día: usa el array de iniciales del idioma activo si llegó por
+    // parámetro; si no, la deriva del nombre del día (fallback).
+    var inicialDia = (diasSemanaCorto && diasSemanaCorto.length === 7)
+      ? diasSemanaCorto[f.getDay()]
+      : diasSemana[f.getDay()].charAt(0);
     headerFechas.push(inicialDia + '\n' + f.getDate() + ' ' + meses[f.getMonth()]);
   }
   var rangoHeader = hojaCreativo.getRange(1, colInicio, 1, headerFechas.length);
@@ -2772,6 +2778,9 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
   rangoHeader.setWrap(true);   // necesario para que se vean las dos líneas
   // Altura suficiente para las dos líneas del header.
   hojaCreativo.setRowHeight(1, 34);
+  // Centrar verticalmente los títulos de las columnas de datos (A hasta la
+  // anterior al timeline), para que queden alineados con el header de fechas.
+  hojaCreativo.getRange(1, 1, 1, colInicio - 1).setVerticalAlignment('middle');
   
   var datos = hojaCreativo.getRange(2, 1, ultimaFila - 1, 5).getValues(); // A:E
   
