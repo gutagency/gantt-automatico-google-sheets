@@ -3448,59 +3448,76 @@ function onEdit(e) {
     return;
   }
   
-  // La sincronización automática Días<->Fechas del onEdit asume el layout de
-  // GUT (Días=B, Inicio=C, Fin=D). La hoja "Gantt Meli" tiene otro layout
-  // (Días=D, Inicio=E, Fin=F), así que NO se sincroniza automáticamente ahí:
-  // el cliente recalcula con el menú Agente Meli (que usa ESQUEMA_MELI).
+  // La sincronización automática Días<->Fechas funciona en AMBAS hojas, usando
+  // el mapa de columnas de cada una:
+  //   GUT  → Días=B(2), Inicio=C(3), Fin=D(4), Day Off=E(5), tareas desde fila 2
+  //   Meli → Días=D(4), Início=E(5), Fim=F(6), sin Day Off, tareas desde fila 8
   var esGut = (nombreHoja === CONFIG.HOJA_CREATIVO);
-  if (!esGut) return;
+  var esMeli = (nombreHoja === CONFIG.HOJA_MELI);
+  if (!esGut && !esMeli) return;
+  
+  var cols = esGut
+    ? { dias: 2, inicio: 3, fin: 4, dayOff: 5, filaIni: 2 }
+    : { dias: ESQUEMA_MELI.COL_DIAS, inicio: ESQUEMA_MELI.COL_INICIO,
+        fin: ESQUEMA_MELI.COL_FIN, dayOff: 0, filaIni: ESQUEMA_MELI.FILA_INICIO_TAREAS };
   
   var filaIni = e.range.getRow();
   var filaFin = filaIni + e.range.getNumRows() - 1;
   var colIni = e.range.getColumn();
   var colFin = colIni + e.range.getNumColumns() - 1;
   
-  // ¿Qué columnas relevantes se tocaron? B=2 (Días), C=3 (Inicio), D=4 (Fin), E=5 (Day Off)
-  var tocoFecha = (colIni <= 4 && colFin >= 3); // intersecta C o D
-  var tocoDias  = (colIni <= 2 && colFin >= 2); // intersecta B
-  var tocoDayOff = (colIni <= 5 && colFin >= 5); // intersecta E
+  // ¿Qué columnas relevantes se tocaron, según el layout de la hoja?
+  var tocoFecha = (colIni <= cols.fin && colFin >= cols.inicio);
+  var tocoDias  = (colIni <= cols.dias && colFin >= cols.dias);
+  var tocoDayOff = esGut && (colIni <= cols.dayOff && colFin >= cols.dayOff);
   
   if (!tocoFecha && !tocoDias && !tocoDayOff) return;
   
   var feriados = obtenerFeriados();
   
   for (var fila = filaIni; fila <= filaFin; fila++) {
-    if (fila < 2) continue; // saltear header
+    if (fila < cols.filaIni) continue; // saltear encabezados
     
-    var actividad = hoja.getRange(fila, 1).getValue();
-    if (!actividad || actividad.toString().trim() === '') continue;
-    
-    // Si es agrupador, saltar
-    if (esFilaHeaderSubgrupo(actividad)) continue;
+    // Validar que la fila sea una tarea real (no agrupador), según la hoja.
+    if (esGut) {
+      var actividad = hoja.getRange(fila, 1).getValue();
+      if (!actividad || actividad.toString().trim() === '') continue;
+      if (esFilaHeaderSubgrupo(actividad)) continue;
+    } else {
+      var macroM = hoja.getRange(fila, ESQUEMA_MELI.COL_MACRO).getValue();
+      var tareaM = hoja.getRange(fila, ESQUEMA_MELI.COL_TAREA).getValue();
+      if (esAgrupadorMeli(macroM, tareaM)) continue;
+      if (!tareaM || tareaM.toString().trim() === '') continue;
+    }
     
     if (tocoDayOff) {
-      // Edición en columna E → recalcular Fecha Fin con excepciones
+      // Edición en columna E → recalcular Fecha Fin con excepciones (solo GUT)
       recalcularFechaFinConExcepciones(hoja, fila, feriados);
     } else if (tocoFecha) {
-      registrarCambioFecha(hoja, fila, colIni, colFin, e);
-      sincronizarDiasDesdeFechas(hoja, fila, feriados);
+      // Edité una fecha → recalculo los Días de esa fila
+      if (esGut) registrarCambioFecha(hoja, fila, colIni, colFin, e);
+      sincronizarDiasDesdeFechas(hoja, fila, feriados, cols);
     } else {
-      // Cambio de días (columna B)
-      var actB = hoja.getRange(fila, 1).getValue();
-      var nuevoDias = hoja.getRange(fila, 2).getValue();
-      registrarLog('Cambio de días', actB + ' — Días: ' +
-        ((e && colIni === 2 && e.oldValue !== undefined) ? (e.oldValue + ' → ') : '') + nuevoDias);
-      sincronizarFechasDesdeDias(hoja, fila, feriados);
+      // Edité los Días → recalculo la fecha (ancla = Inicio; fallback = Fin)
+      if (esGut) {
+        var actB = hoja.getRange(fila, 1).getValue();
+        var nuevoDias = hoja.getRange(fila, cols.dias).getValue();
+        registrarLog('Cambio de días', actB + ' — Días: ' +
+          ((e && colIni === cols.dias && e.oldValue !== undefined) ? (e.oldValue + ' → ') : '') + nuevoDias);
+      }
+      sincronizarFechasDesdeDias(hoja, fila, feriados, cols);
     }
   }
   
-  // Tras sincronizar, re-evaluar superposición de fechas en la tabla de entrada.
-  // Pinta de celeste las celdas C:D de las filas que se solapan; limpia las que no.
-  var haySuperposicion = marcarSuperposicionEntrada(hoja);
-  if (haySuperposicion) {
-    SpreadsheetApp.getActiveSpreadsheet().toast(
-      'Estás superponiendo fechas a mano (hay tareas en paralelo).',
-      '⚠️ Fechas superpuestas', 6);
+  // Superposición de fechas: por ahora solo GUT. marcarSuperposicionEntrada()
+  // tiene el layout de GUT fijo (C:D desde la fila 2).
+  if (esGut) {
+    var haySuperposicion = marcarSuperposicionEntrada(hoja);
+    if (haySuperposicion) {
+      SpreadsheetApp.getActiveSpreadsheet().toast(
+        'Estás superponiendo fechas a mano (hay tareas en paralelo).',
+        '⚠️ Fechas superpuestas', 6);
+    }
   }
 
   // Si se cambiaron DÍAS, el desvío pudo cambiar → mostrar estado y
@@ -3554,15 +3571,19 @@ function marcarSuperposicionEntrada(hoja) {
 }
 
 // Dirección A: fechas -> Días (recalcula los días hábiles de la fila)
-function sincronizarDiasDesdeFechas(hoja, fila, feriados) {
-  var inicio = convertirAFecha(hoja.getRange(fila, 3).getValue());
-  var fin = convertirAFecha(hoja.getRange(fila, 4).getValue());
+// cols (opcional): mapa de columnas { dias, inicio, fin }. Si no se pasa, usa
+// el layout de GUT (Días=B, Inicio=C, Fin=D). Para Meli se pasa
+// { dias: 4, inicio: 5, fin: 6 } según ESQUEMA_MELI.
+function sincronizarDiasDesdeFechas(hoja, fila, feriados, cols) {
+  var c = cols || { dias: 2, inicio: 3, fin: 4 };
+  var inicio = convertirAFecha(hoja.getRange(fila, c.inicio).getValue());
+  var fin = convertirAFecha(hoja.getRange(fila, c.fin).getValue());
   
   if (!inicio || !fin) return; // faltan fechas, no se puede calcular
   
   var dias = calcularDiasHabiles(inicio, fin, feriados);
-  hoja.getRange(fila, 2).setValue(dias);
-  hoja.getRange(fila, 3, 1, 2).setNumberFormat('dd/MM/yyyy');
+  hoja.getRange(fila, c.dias).setValue(dias);
+  hoja.getRange(fila, c.inicio, 1, 2).setNumberFormat('dd/MM/yyyy');
 }
 
 // Recalcular Fecha Fin al editar columna E (Day Off).
@@ -3617,23 +3638,25 @@ function recalcularFechaFinConExcepciones(hoja, fila, feriados) {
 }
 
 // Dirección B: Días -> Fecha Fin (ancla = Fecha Inicio). Fallback: ancla = Fecha Fin.
-function sincronizarFechasDesdeDias(hoja, fila, feriados) {
-  var dias = parseInt(hoja.getRange(fila, 2).getValue(), 10);
+// cols (opcional): mapa { dias, inicio, fin }. Default = layout de GUT.
+function sincronizarFechasDesdeDias(hoja, fila, feriados, cols) {
+  var c = cols || { dias: 2, inicio: 3, fin: 4 };
+  var dias = parseInt(hoja.getRange(fila, c.dias).getValue(), 10);
   if (isNaN(dias) || dias < 1) return; // días inválido, no toco fechas
   
-  var inicio = convertirAFecha(hoja.getRange(fila, 3).getValue());
-  var fin = convertirAFecha(hoja.getRange(fila, 4).getValue());
+  var inicio = convertirAFecha(hoja.getRange(fila, c.inicio).getValue());
+  var fin = convertirAFecha(hoja.getRange(fila, c.fin).getValue());
   
   if (inicio) {
     // Ancla = Fecha Inicio -> recalculo Fecha Fin
     var nuevaFin = sumarDiasHabiles(inicio, dias - 1, feriados);
-    hoja.getRange(fila, 4).setValue(nuevaFin);
-    hoja.getRange(fila, 3, 1, 2).setNumberFormat('dd/MM/yyyy');
+    hoja.getRange(fila, c.fin).setValue(nuevaFin);
+    hoja.getRange(fila, c.inicio, 1, 2).setNumberFormat('dd/MM/yyyy');
   } else if (fin) {
     // No hay Inicio pero sí Fin -> ancla = Fecha Fin -> recalculo Fecha Inicio
     var nuevaInicio = restarDiasHabiles(fin, dias - 1, feriados);
-    hoja.getRange(fila, 3).setValue(nuevaInicio);
-    hoja.getRange(fila, 3, 1, 2).setNumberFormat('dd/MM/yyyy');
+    hoja.getRange(fila, c.inicio).setValue(nuevaInicio);
+    hoja.getRange(fila, c.inicio, 1, 2).setNumberFormat('dd/MM/yyyy');
   }
   // si no hay ninguna fecha, no hay ancla -> no se hace nada
 }
@@ -3726,6 +3749,33 @@ function completarDiasFaltantesCreativo() {
   if (hayCambios) {
     hoja.getRange(2, 2, columnaDias.length, 1).setValues(columnaDias);
   }
+}
+
+// ============================================
+// DIAGNÓSTICO DE MARCA: correr a mano (Ejecutar → diagnosticarMarca) y mirar
+// el Log. Dice qué marca detecta el código y qué hay en los checkboxes
+// C11..C14 de Instrucciones, para saber por qué el Gantt no toma el color.
+// ============================================
+function diagnosticarMarca() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_INSTRUCCIONES);
+  if (!hoja) { Logger.log('NO existe la hoja "' + CONFIG.HOJA_INSTRUCCIONES + '"'); return; }
+
+  var etiquetas = { 11: 'Mercado Libre', 12: 'Mercado Pago', 13: 'Estándar', 14: 'Pedidos Ya' };
+  for (var f = 11; f <= 14; f++) {
+    var valC = hoja.getRange(f, 3).getValue();   // columna C
+    var textoB = hoja.getRange(f, 2).getValue(); // columna B (por si la etiqueta está ahí)
+    Logger.log('Fila ' + f + ' (' + etiquetas[f] + ') | C' + f + ' = ' + valC +
+      ' (tipo ' + (typeof valC) + ') | B' + f + ' = "' + textoB + '"');
+  }
+
+  var marca = obtenerMarcaSeleccionada();
+  Logger.log('>>> MARCA DETECTADA: ' + marca);
+  Logger.log('>>> Color que usaría el timeline: ' +
+    (marca === 'pedidos_ya' ? CONFIG.PY_COLOR_BARRA + ' (rojo Pedidos Ya)'
+     : (marca === 'mercado_pago' || marca === 'estandar') ? 'colores Mercado Pago por sección'
+     : CONFIG.COLOR_PRESENTACION + ' (amarillo Mercado Libre)'));
+  Logger.log('>>> PY_COLOR_BARRA definido en CONFIG: ' + (CONFIG.PY_COLOR_BARRA ? 'SI' : 'NO'));
 }
 
 // ============================================
