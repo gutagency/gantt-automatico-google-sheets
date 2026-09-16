@@ -83,6 +83,11 @@ var CONFIG = {
   HOJA_LOGS: 'Logs',
   HOJA_MELI: 'Gantt Meli',   // Hoja del cliente (layout propio, ver ESQUEMA_MELI)
 
+  // Tab "Gantt" separada: DESACTIVADA. El Gantt se genera solo inline sobre
+  // "Gantt GUT". En false, las escrituras a la tab van a un objeto no-op
+  // (crearHojaNoOp) y no se crea ninguna hoja. Poner en true para reactivarla.
+  TAB_GANTT_ACTIVA: false,
+
   // Columnas de la tabla de entrada GUT (Gantt GUT):
   // A=Actividad, B=Días, C=Inicio, D=Fin, E=Day Off (oculta/inactiva),
   // F=Status, G=Responsible, H+=timeline
@@ -3502,7 +3507,9 @@ function onEdit(e) {
   // regenerar el resumen. Una sola vez por edición (no por fila).
   // El desvío/resumen es SOLO del mundo GUT; Meli no lo usa.
   if (tocoDias && esGut) {
-    mostrarEstadoDesvio();
+    // ALERTA DE DESVÍO DE DÍAS DESACTIVADA (se percibía como spam).
+    // Para reactivar, descomentar la línea de abajo:
+    // mostrarEstadoDesvio();
     generarResumenEnDoc(true);
   }
 }
