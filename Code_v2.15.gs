@@ -2750,17 +2750,28 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
   var esMercadoPago = (marca === 'mercado_pago' || marca === 'estandar');
   var colInicio = CONFIG.COL_TIMELINE_INICIO; // Columna H (E=Day Off oculto, F=Status, G=Responsible)
   
-  // Header de fechas (mismo formato ML para ambas marcas)
+  // Header de fechas: dos líneas en la MISMA celda (inicial del día de la
+  // semana arriba, y abajo el día + mes). Se hace con un salto de línea en vez
+  // de agregar una fila real, para no correr las tareas de la fila 2 (eso
+  // obligaría a revisar las decenas de lugares que asumen ese layout).
+  // La inicial se toma del array de días, que ya viene en el idioma activo:
+  // español D/L/M/M/J/V/S — portugués D/S/T/Q/Q/S/S.
   var headerFechas = [];
   for (var j = 0; j < fechas.length; j++) {
     var f = fechas[j];
-    headerFechas.push(f.getDate() + ' ' + meses[f.getMonth()]);
+    var inicialDia = diasSemana[f.getDay()].charAt(0);
+    headerFechas.push(inicialDia + '\n' + f.getDate() + ' ' + meses[f.getMonth()]);
   }
-  hojaCreativo.getRange(1, colInicio, 1, headerFechas.length).setValues([headerFechas]);
-  hojaCreativo.getRange(1, colInicio, 1, headerFechas.length).setBackground(CONFIG.COLOR_HEADER);
-  hojaCreativo.getRange(1, colInicio, 1, headerFechas.length).setFontColor(CONFIG.COLOR_HEADER_TEXT);
-  hojaCreativo.getRange(1, colInicio, 1, headerFechas.length).setFontWeight('bold');
-  hojaCreativo.getRange(1, colInicio, 1, headerFechas.length).setHorizontalAlignment('center');
+  var rangoHeader = hojaCreativo.getRange(1, colInicio, 1, headerFechas.length);
+  rangoHeader.setValues([headerFechas]);
+  rangoHeader.setBackground(CONFIG.COLOR_HEADER);
+  rangoHeader.setFontColor(CONFIG.COLOR_HEADER_TEXT);
+  rangoHeader.setFontWeight('bold');
+  rangoHeader.setHorizontalAlignment('center');
+  rangoHeader.setVerticalAlignment('middle');
+  rangoHeader.setWrap(true);   // necesario para que se vean las dos líneas
+  // Altura suficiente para las dos líneas del header.
+  hojaCreativo.setRowHeight(1, 34);
   
   var datos = hojaCreativo.getRange(2, 1, ultimaFila - 1, 5).getValues(); // A:E
   
