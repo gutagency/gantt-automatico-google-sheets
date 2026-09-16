@@ -252,6 +252,117 @@ var TRADUCCIONES_PT = {
 };
 
 // ============================================
+// DICCIONARIO DE TRADUCCIONES (ESPAÑOL → INGLÉS)
+// Mismas claves que TRADUCCIONES_PT (español en MAYÚSCULAS, con y sin tilde).
+// ============================================
+
+var TRADUCCIONES_EN = {
+  // Mercado Libre - Agrupadores de etapa
+  'ETAPA CREATIVA': 'CREATIVE STAGE',
+  'ETAPA PRODUCCION': 'PRODUCTION STAGE',
+  'ETAPA PRODUCCIÓN': 'PRODUCTION STAGE',
+  // Mercado Libre - Tareas
+  'BRIEF': 'BRIEF',
+  'DEBRIEF': 'DEBRIEF',
+  'REUNIÓN MANAGEMENT': 'MANAGEMENT MEETING',
+  'REUNION MANAGEMENT': 'MANAGEMENT MEETING',
+  'KICK OFF': 'KICK OFF',
+  'ESTRATEGIA & CREATIVIDAD': 'STRATEGY & CREATIVE',
+  'CREATIVIDAD ROUND #1 I NARRATIVA 1.0': 'CREATIVE ROUND #1 I Narrative 1.0',
+  'FEEDBACK CLIENTE ROUND #1': 'CLIENT FEEDBACK ROUND #1',
+  'CELEBRITY I VALIDACIÓN': 'CELEBRITY I Validation',
+  'CELEBRITY I VALIDACION': 'CELEBRITY I Validation',
+  'MEDIOS I TOUCHPOINT BAU': 'MEDIA I Touchpoint BAU',
+  'AJUSTES CREATIVIDAD + ROLL OUT': 'CREATIVE ADJUSTMENTS + ROLL OUT',
+  'CREATIVIDAD ROUND #2 I NARRATIVA 2.0': 'CREATIVE ROUND #2 I Narrative 2.0',
+  'FEEDBACK CLIENTE ROUND #2': 'CLIENT FEEDBACK ROUND #2',
+  'MEDIOS I BRIEF CON LÍNEA CREATIVA': 'MEDIA I Brief with creative line',
+  'MEDIOS I BRIEF CON LINEA CREATIVA': 'MEDIA I Brief with creative line',
+  'CREATIVIDAD ROUND #3 I NARRATIVA 3.0': 'CREATIVE ROUND #3 I Narrative 3.0',
+  'FEEDBACK CLIENTE ROUND #3': 'CLIENT FEEDBACK ROUND #3',
+  'CELEBRITY I ENVÍO GUIONES FINALES': 'CELEBRITY I final scripts delivery',
+  'CELEBRITY I ENVIO GUIONES FINALES': 'CELEBRITY I final scripts delivery',
+  'CELEBRITY I APROBACIÓN GUIONES FINALES': 'CELEBRITY I final scripts approval',
+  'CELEBRITY I APROBACION GUIONES FINALES': 'CELEBRITY I final scripts approval',
+  'MEDIOS I DEADLINE PLAN DE MEDIOS': 'MEDIA I Media plan deadline',
+  'APROBACIÓN FINAL CREATIVIDAD': 'FINAL CREATIVE APPROVAL',
+  'APROBACION FINAL CREATIVIDAD': 'FINAL CREATIVE APPROVAL',
+  'BUSQUEDA DE PRODUCTORAS': 'PRODUCTION COMPANY SEARCH',
+  'BÚSQUEDA DE PRODUCTORAS': 'PRODUCTION COMPANY SEARCH',
+  'KICK OFF PRODUCCIÓN + ARMADO BID SPECS': 'PRODUCTION KICK OFF + BID SPECS',
+  'KICK OFF PRODUCCION + ARMADO BID SPECS': 'PRODUCTION KICK OFF + BID SPECS',
+  'PRESENTACIÓN TRATAMIENTO AGENCIA': 'TREATMENT PRESENTATION I AGENCY',
+  'PRESENTACION TRATAMIENTO AGENCIA': 'TREATMENT PRESENTATION I AGENCY',
+  'PRESENTACIÓN TRATAMIENTO CLIENTE': 'TREATMENT PRESENTATION I CLIENT',
+  'PRESENTACION TRATAMIENTO CLIENTE': 'TREATMENT PRESENTATION I CLIENT',
+  'ASIGNACIÓN PRODUCTORA + INFORMATIVA': 'PRODUCTION COMPANY AWARD + BRIEFING',
+  'ASIGNACION PRODUCTORA + INFORMATIVA': 'PRODUCTION COMPANY AWARD + BRIEFING',
+  'DELIVERY DATE': 'DELIVERY DATE',
+  'AIR DATE': 'AIR DATE',
+  // Mercado Pago - Agrupadores
+  'DESARROLLO CREATIVO': 'CREATIVE DEVELOPMENT',
+  'PRODUCCIÓN': 'PRODUCTION',
+  'PRODUCCION': 'PRODUCTION',
+  // Mercado Pago - Tareas
+  'BRIEF CON CLIENTE': 'Client brief',
+  'KICKOFF INTERNO': 'Internal kickoff',
+  'SET UP ESTRATÉGICO': 'Strategic setup',
+  'SET UP ESTRATEGICO': 'Strategic setup',
+  'DESARROLLO CREATIVO + TP INTERNOS': 'Creative development + internal TPs',
+  '1º ROUND (RUTAS CREATIVAS)': '1st Round (Creative routes)',
+  'FEEDBACK (ELECCIÓN DE RUTA CREATIVA)': 'Feedback (creative route selection)',
+  'FEEDBACK (ELECCION DE RUTA CREATIVA)': 'Feedback (creative route selection)',
+  'ENTREGA PLAN DE MEDIOS CON FECHAS CLAVE': 'Media plan delivery with key dates',
+  'AJUSTES CREATIVOS + BAJADA DEPLOYMENT 360º': 'Creative adjustments + 360º deployment',
+  '2º ROUND (DEPLOYMENT)': '2nd Round (Deployment)',
+  'FEEDBACK': 'Feedback',
+  'AJUSTES CREATIVOS DEPLOYMENT': 'Deployment creative adjustments',
+  '3º ROUND': '3rd Round',
+  'APROBACIÓN FINAL DEPLOYMENT': 'Final deployment approval',
+  'APROBACION FINAL DEPLOYMENT': 'Final deployment approval',
+  'DESARROLLO ESTRATEGIA DIGITAL': 'Digital strategy development',
+  'REVISIÓN ESTRATEGIA DIGITAL': 'Digital strategy review',
+  'REVISION ESTRATEGIA DIGITAL': 'Digital strategy review',
+  'FEEDBACK + AJUSTES + APROBACIÓN': 'Feedback + Adjustments + Approval',
+  'FEEDBACK + AJUSTES + APROBACION': 'Feedback + Adjustments + Approval',
+  'DESARROLLO BRIEF INFLUENCERS': 'Influencer brief development',
+  'REVISIÓN BRIEF INFLUENCERS': 'Influencer brief review',
+  'REVISION BRIEF INFLUENCERS': 'Influencer brief review',
+  'KICK OFF PRODUCCIÓN (TODO TBC CONTRA TT REAL DE PH)': 'Production kick off (all TBC against real PH TT)',
+  'KICK OFF PRODUCCION (TODO TBC CONTRA TT REAL DE PH)': 'Production kick off (all TBC against real PH TT)',
+  'BRIEF PH': 'PH Brief',
+  'COTIZACIÓN + TRATAMIENTOS': 'Quotes + Treatments',
+  'COTIZACION + TRATAMIENTOS': 'Quotes + Treatments',
+  'TRATAMIENTOS AGENCIA + CLIENTE': 'Treatments Agency + Client',
+  'ASIGNACIÓN PRODUCTORA': 'Production company award',
+  'ASIGNACION PRODUCTORA': 'Production company award',
+  'PRE PRODUCCIÓN': 'Pre-production',
+  'PRE PRODUCCION': 'Pre-production',
+  'PPM | AGENCIA': 'PPM | Agency',
+  'PPM | CLIENTE': 'PPM | Client',
+  'SHOOTING FILM': 'Shooting film',
+  'POST PRODUCCIÓN FOTO': 'Photo post-production',
+  'POST PRODUCCION FOTO': 'Photo post-production',
+  'ENTREGA KV': 'KV delivery',
+  'POST PRODUCCIÓN VIDEOS': 'Video post-production',
+  'POST PRODUCCION VIDEOS': 'Video post-production',
+  'ENTREGA ESCALONADAS VIDEOS + LLENADO GANTT': 'Staggered video deliveries + gantt filling',
+  'AIRE': 'On air'
+};
+
+// Invierte un diccionario de traducción (valor → clave), para poder volver al
+// español desde otro idioma sin mantener un segundo diccionario a mano.
+function invertirDiccionario(dic) {
+  var inv = {};
+  for (var k in dic) {
+    if (!dic.hasOwnProperty(k)) continue;
+    var v = dic[k].toString().toUpperCase().trim();
+    if (!inv[v]) inv[v] = k;   // la primera coincidencia gana
+  }
+  return inv;
+}
+
+// ============================================
 // DICCIONARIO INVERSO (PORTUGUÉS → ESPAÑOL)
 // ============================================
 
@@ -440,7 +551,9 @@ function poblarTareasPredeterminadas() {
   var usaSetMercadoPago = (marca === 'mercado_pago' || marca === 'estandar');
   var datosMarca = usaSetMercadoPago ? TAREAS_MERCADO_PAGO : TAREAS_MERCADO_LIBRE;
   var idioma = obtenerIdiomaSeleccionado();
-  var diccionario = (idioma === 'portugues') ? TRADUCCIONES_PT : null;
+  var diccionario = (idioma === 'portugues') ? TRADUCCIONES_PT
+    : (idioma === 'ingles') ? TRADUCCIONES_EN
+    : null;
   
   // Limpiar contenido existente (preservar header fila 1)
   var ultimaFila = hoja.getLastRow();
@@ -547,19 +660,40 @@ function traducirActividadesEnHoja() {
   if (ultimaFila < 2) return;
   
   var idioma = obtenerIdiomaSeleccionado();
-  var diccionario = (idioma === 'portugues') ? TRADUCCIONES_PT : TRADUCCIONES_ES;
+  
+  // Con tres idiomas ya no alcanza un solo diccionario. Se hace en dos pasos:
+  // 1) se normaliza el texto actual a español (venga de PT o EN),
+  // 2) se traduce del español al idioma destino.
+  // Así se puede pasar de cualquier idioma a cualquier otro.
+  var inversoEN = invertirDiccionario(TRADUCCIONES_EN);
   
   var rango = hoja.getRange(2, 1, ultimaFila - 1, 1);
   var valores = rango.getValues();
   
   for (var i = 0; i < valores.length; i++) {
     var actividad = valores[i][0];
-    if (actividad) {
-      var actividadUpper = actividad.toString().toUpperCase().trim();
-      if (diccionario[actividadUpper]) {
-        valores[i][0] = diccionario[actividadUpper];
-      }
+    if (!actividad) continue;
+    
+    var actual = actividad.toString().toUpperCase().trim();
+    
+    // Paso 1: volver al español.
+    var enEspanol = actual;
+    if (TRADUCCIONES_ES[actual]) {
+      enEspanol = TRADUCCIONES_ES[actual];          // portugués → español
+    } else if (inversoEN[actual]) {
+      enEspanol = inversoEN[actual];                // inglés → español
     }
+    
+    // Paso 2: traducir al idioma destino (si es español, queda como está).
+    var claveEs = enEspanol.toString().toUpperCase().trim();
+    var destino = enEspanol;
+    if (idioma === 'portugues' && TRADUCCIONES_PT[claveEs]) {
+      destino = TRADUCCIONES_PT[claveEs];
+    } else if (idioma === 'ingles' && TRADUCCIONES_EN[claveEs]) {
+      destino = TRADUCCIONES_EN[claveEs];
+    }
+    
+    valores[i][0] = destino;
   }
   
   rango.setValues(valores);
@@ -741,7 +875,8 @@ function obtenerIdiomaSeleccionado() {
   for (var i = 0; i < datos.length; i++) {
     for (var j = 0; j < datos[i].length; j++) {
       var valor = datos[i][j] ? datos[i][j].toString() : '';
-      if (valor.indexOf('Seleccionar idioma') !== -1 || valor.indexOf('Selecionar idioma') !== -1) {
+      if (valor.indexOf('Seleccionar idioma') !== -1 || valor.indexOf('Selecionar idioma') !== -1 ||
+          valor.indexOf('Select language') !== -1) {
         filaIdioma = i + 1;
         break;
       }
@@ -751,10 +886,14 @@ function obtenerIdiomaSeleccionado() {
   
   if (filaIdioma === -1) return 'espanol';
   
+  // Checkboxes de idioma en la fila encontrada: D = español, F = portugués,
+  // H = inglés. Español queda como default si no hay ninguno marcado.
   var checkEspanol = hojaInstrucciones.getRange(filaIdioma, 4).getValue();    // D
   var checkPortugues = hojaInstrucciones.getRange(filaIdioma, 6).getValue();  // F
+  var checkIngles = hojaInstrucciones.getRange(filaIdioma, 8).getValue();     // H
   
   if (checkPortugues === true) return 'portugues';
+  if (checkIngles === true) return 'ingles';
   return 'espanol';
 }
 
@@ -2272,18 +2411,27 @@ function generarGanttInterno(feriados, excepciones) {
   // Etiquetas de fecha según idioma seleccionado en Instrucciones.
   var idiomaGantt = obtenerIdiomaSeleccionado();
   var esPtGantt = (idiomaGantt === 'portugues');
-  var diasSemana = esPtGantt
-    ? ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
-    : ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
-  var diasSemanaCorto = esPtGantt
-    ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
-    : ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-  var meses = esPtGantt
-    ? ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
-    : ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  var mesesMayus = esPtGantt
-    ? ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
-    : ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+  var esEnGantt = (idiomaGantt === 'ingles');
+  var diasSemana = esEnGantt
+    ? ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+    : esPtGantt
+      ? ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB']
+      : ['DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB'];
+  var diasSemanaCorto = esEnGantt
+    ? ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+    : esPtGantt
+      ? ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+      : ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  var meses = esEnGantt
+    ? ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    : esPtGantt
+      ? ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
+      : ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var mesesMayus = esEnGantt
+    ? ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+    : esPtGantt
+      ? ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO']
+      : ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
   
   var marca = obtenerMarcaSeleccionada();
   var esMercadoPago = (marca === 'mercado_pago');
@@ -2970,9 +3118,10 @@ function obtenerActividadesCreativo(hoja) {
           seccionActual = 'produccion';
         }
       } else {
-        if (norm === 'ETAPA CREATIVA' || norm === 'ETAPA CRIATIVA' || norm === 'PROCESO CREATIVO') {
+        if (norm === 'ETAPA CREATIVA' || norm === 'ETAPA CRIATIVA' || norm === 'CREATIVE STAGE' || norm === 'PROCESO CREATIVO') {
           seccionActual = 'creativo';
-        } else if (norm === 'ETAPA PRODUCCION' || norm === 'ETAPA PRODUCCIÓN' || norm === 'ETAPA PRODUÇÃO' || norm === 'PRODUCTION PLANNING') {
+        } else if (norm === 'ETAPA PRODUCCION' || norm === 'ETAPA PRODUCCIÓN' || norm === 'ETAPA PRODUÇÃO' ||
+                   norm === 'PRODUCTION STAGE' || norm === 'PRODUCTION PLANNING') {
           seccionActual = 'produccion';
         }
       }
