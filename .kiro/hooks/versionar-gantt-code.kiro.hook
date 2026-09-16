@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "name": "Versionar Code GanttLib",
+  "description": "Antes de escribir en cualquier archivo Code_v*.gs, archiva la versión actual en \"versiones anteriores/\" e indica al agente que use el número de versión incrementado para el nuevo archivo.",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "\nUna herramienta de escritura (fsWrite, strReplace, fsAppend) está a punto de ejecutarse. Seguí estos pasos ANTES de continuar:\n\n1. Verificá si el archivo destino coincide con el patrón `Code_v*.gs` (por ejemplo, `Code_v2.14.gs`, `Code_v2.15.gs`, etc.).\n\n2. Si NO coincide con ese patrón, dejá pasar la operación normalmente sin hacer nada más.\n\n3. Si SÍ coincide con ese patrón:\n   a. Determiná el número de versión actual del archivo (ej: `2.14` de `Code_v2.14.gs`).\n   b. Calculá la siguiente versión incrementando el número menor en 1 (ej: `2.14` → `2.15`).\n   c. Verificá si existe la carpeta `versiones anteriores/`. Si no existe, créala usando la herramienta disponible.\n   d. Copiá el contenido actual del archivo (usando readFile) a `versiones anteriores/Code_v{VERSION_ACTUAL}.gs`.\n   e. Renombrá mentalmente el archivo destino de la operación original para que use la nueva versión (ej: `Code_v2.15.gs` en lugar de `Code_v2.14.gs`).\n   f. Aplicá los cambios en el archivo con la nueva versión, NO en el archivo con la versión anterior.\n   g. Actualizá el comentario JSDoc en la parte superior del archivo nuevo para reflejar la nueva versión y documentar el cambio realizado.\n   h. Actualizá el archivo `structure.md` en `.kiro/steering/` para reflejar el nuevo nombre del archivo (`Code_v2.15.gs`, etc.).\n\nRecordá: el archivo `Code_v2.14.gs` (u otro con versión anterior) debe quedar sin tocar una vez archivado. Todos los cambios nuevos van al archivo con la versión incrementada.\n"
+  }
+}

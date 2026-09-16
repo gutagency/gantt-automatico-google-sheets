@@ -1,0 +1,11 @@
+{
+  "name": "gantt-tests",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest --testPathPattern=tests/"
+  },
+  "dependencies": {
+    "fast-check": "3.22.0",
+    "jest": "29.7.0"
+  }
+}

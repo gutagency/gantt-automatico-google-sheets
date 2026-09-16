@@ -1,0 +1,11 @@
+# Dependencias
+node_modules/
+
+# Sistema
+.DS_Store
+
+# Editor
+.vscode/
+
+# El sitio del avatar D-ID es un repo aparte (gutagency/gantt-onboarding)
+onboarding-web/
