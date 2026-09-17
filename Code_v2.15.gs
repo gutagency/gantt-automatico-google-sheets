@@ -5134,7 +5134,25 @@ var SYSTEM_PROMPT_PT = 'Você é um assistente que executa ações em um Gantt n
 
 function obtenerSystemPrompt() {
   var idioma = obtenerIdiomaSeleccionado();
-  return (idioma === 'portugues') ? SYSTEM_PROMPT_PT : SYSTEM_PROMPT_ES;
+  var base = (idioma === 'portugues') ? SYSTEM_PROMPT_PT : SYSTEM_PROMPT_ES;
+  
+  // El cuerpo del prompt está escrito en español, así que el modelo tiende a
+  // responder en español aunque se le pida reflejar el idioma del usuario.
+  // Como sabemos el idioma elegido en Instrucciones, se refuerza al FINAL del
+  // prompt (la última instrucción es la que más peso tiene).
+  if (idioma === 'ingles') {
+    base += '\n\n=== OUTPUT LANGUAGE: ENGLISH ===\n' +
+      'The user works in ENGLISH. Write EVERY reply in English: confirmations, ' +
+      'questions, explanations and errors. Also write the "mensaje" field of the ' +
+      'JSON in English. Never answer in Spanish or Portuguese, even though these ' +
+      'instructions are written in Spanish.\n';
+  } else if (idioma === 'portugues') {
+    base += '\n\n=== IDIOMA DE SAÍDA: PORTUGUÊS ===\n' +
+      'O usuário trabalha em PORTUGUÊS. Escreva TODAS as respostas em português, ' +
+      'incluindo o campo "mensaje" do JSON.\n';
+  }
+  
+  return base;
 }
 
 // ============================================
