@@ -2742,7 +2742,13 @@ function generarGanttInterno(feriados, excepciones) {
     }
   }
   
-  SpreadsheetApp.getUi().alert('Gantt generado correctamente.');
+  // Aviso final según el idioma seleccionado en Instrucciones.
+  // Es un toast: no bloquea y desaparece solo, así no hay que apretar OK.
+  var idiomaMsg = obtenerIdiomaSeleccionado();
+  var msgFinal = (idiomaMsg === 'ingles') ? 'Gantt generated successfully.'
+    : (idiomaMsg === 'portugues') ? 'Gantt gerado com sucesso.'
+    : 'Gantt generado correctamente.';
+  SpreadsheetApp.getActiveSpreadsheet().toast(msgFinal, '✅', 5);
 }
 
 // Objeto "no-op" que imita la API de una hoja para redirigir las escrituras
