@@ -6115,7 +6115,15 @@ function agregarDayOffBot(nombreTarea, fechas) {
       var feriados = obtenerFeriados();
       recalcularFechaFinConExcepciones(hoja, fila, feriados);
       
-      return 'Day Off agregado para "' + datos[i][0] + '": ' + fechas.join(', ') + '. Fechas recalculadas automáticamente.';
+      // Al trabajar un finde/feriado esta tarea termina antes, así que quedaría
+      // un día sin actividad hasta que arranca la siguiente. Se recascadea
+      // hacia abajo desde esta fila para cerrar ese hueco.
+      var recalculadas = cascadearHaciaAbajoDesdeFila(hoja, fila, feriados);
+      formatearFechasCreativo();
+      marcarSuperposicionEntrada(hoja);
+      
+      return 'Day Off agregado para "' + datos[i][0] + '": ' + fechas.join(', ') +
+        '. Fechas recalculadas y ' + recalculadas + ' tarea(s) siguientes reajustadas.';
     }
   }
   
@@ -6178,6 +6186,52 @@ function cambiarDiasTareaBot(nombreTarea, nuevoDias) {
   }
   
   return 'No encontré la tarea "' + nombreTarea + '".';
+}
+
+// Recascadea hacia ABAJO a partir de una fila ya calculada (la fila ancla no
+// se toca). Cada tarea siguiente arranca el día hábil posterior al fin de la
+// anterior, respetando su propio Day Off (columna E).
+// Corta en la primera fila vacía, agrupador o sin días numéricos.
+// Devuelve la cantidad de tareas recalculadas.
+// Se usa después de agregar un Day Off: al terminar antes esa tarea, quedaría
+// un día sin actividad hasta la siguiente, y esto lo cierra.
+function cascadearHaciaAbajoDesdeFila(hoja, filaAncla, feriados) {
+  var finAncla = convertirAFecha(hoja.getRange(filaAncla, 4).getValue());
+  if (!finAncla) return 0;
+  
+  var ultimaFila = hoja.getLastRow();
+  var fechaFinPrevia = finAncla;
+  var recalculadas = 0;
+  
+  for (var fila = filaAncla + 1; fila <= ultimaFila; fila++) {
+    var actividad = hoja.getRange(fila, 1).getValue();
+    if (!actividad || actividad.toString().trim() === '') break;
+    
+    var dias = parseInt(hoja.getRange(fila, 2).getValue());
+    if (isNaN(dias)) break;   // agrupador o fila sin días → corta
+    
+    var exc = parsearExcepcionesColE(hoja.getRange(fila, 5).getValue());
+    
+    if (dias === 0) {
+      // Hito: mismo día que el fin de la tarea anterior.
+      hoja.getRange(fila, 3).setValue(fechaFinPrevia);
+      hoja.getRange(fila, 4).setValue(fechaFinPrevia);
+      recalculadas++;
+      continue;
+    }
+    
+    if (dias < 1) dias = 1;
+    var nuevoInicio = siguienteDiaHabilConExc(fechaFinPrevia, feriados, exc);
+    var nuevoFin = sumarDiasHabilesConExc(nuevoInicio, dias - 1, feriados, exc);
+    
+    hoja.getRange(fila, 3).setValue(nuevoInicio);
+    hoja.getRange(fila, 4).setValue(nuevoFin);
+    
+    fechaFinPrevia = nuevoFin;
+    recalculadas++;
+  }
+  
+  return recalculadas;
 }
 
 // ============================================
