@@ -110,8 +110,10 @@ var CONFIG = {
   COLOR_SUPERPOSICION: '#9FC5E8',  // Azul claro - celdas del Gantt donde se superponen 2+ tareas
   COLOR_AVISO_SUPERPOSICION: '#A2DCF0', // Celeste - celdas de fecha (C:D) de entrada cuando hay superposición
   
-  // Color de barras - Pedidos Ya (rojo suave de marca)
-  PY_COLOR_BARRA: '#EF9A9A',       // Rojo suave - barras del Gantt para Pedidos Ya
+  // Colores Pedidos Ya (rojo de marca)
+  PY_COLOR_BARRA: '#EF9A9A',       // Rojo suave - barras del Gantt
+  PY_COLOR_HEADER: '#EF9A9A',      // Header de fechas del timeline (mismo rojo)
+  PY_COLOR_HEADER_TEXT: '#000000', // Texto del header sobre el rojo suave
   
   // Colores Mercado Pago - Gantt
   MP_COLOR_AGRUPADOR_CREATIVO: '#CC0000',       // Rojo - Desarrollo Creativo
@@ -2916,10 +2918,16 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
       : diasSemana[f.getDay()].charAt(0);
     headerFechas.push(inicialDia + '\n' + f.getDate() + ' ' + meses[f.getMonth()]);
   }
+  // Color del header: para Pedidos Ya usa el rojo de la marca (mismo color que
+  // las barras); el resto de las marcas mantienen el header estándar.
+  var esPedidosYa = (marca === 'pedidos_ya');
+  var fondoHeader = esPedidosYa ? CONFIG.PY_COLOR_HEADER : CONFIG.COLOR_HEADER;
+  var textoHeader = esPedidosYa ? CONFIG.PY_COLOR_HEADER_TEXT : CONFIG.COLOR_HEADER_TEXT;
+  
   var rangoHeader = hojaCreativo.getRange(1, colInicio, 1, headerFechas.length);
   rangoHeader.setValues([headerFechas]);
-  rangoHeader.setBackground(CONFIG.COLOR_HEADER);
-  rangoHeader.setFontColor(CONFIG.COLOR_HEADER_TEXT);
+  rangoHeader.setBackground(fondoHeader);
+  rangoHeader.setFontColor(textoHeader);
   rangoHeader.setFontWeight('bold');
   rangoHeader.setHorizontalAlignment('center');
   rangoHeader.setVerticalAlignment('middle');
