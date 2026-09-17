@@ -3589,6 +3589,10 @@ function onChange(e) {
     // Gantt visual inline las reconozca.
     normalizarFechasCreativo();
     
+    // Las filas de la entrada automática llegan sin bordes: se marcan igual
+    // que las cargadas a mano.
+    marcarBordesTablaCreativo();
+    
     // Cuando la cuenta de servicio inserta la entrada automática, viene con
     // Fecha Inicio (C) y Fecha Fin (D) pero sin Días (B). onEdit no se dispara
     // con escrituras programáticas, así que acá se calculan los días hábiles
@@ -3953,6 +3957,26 @@ function completarDiasFaltantesCreativo() {
   if (hayCambios) {
     hoja.getRange(2, 2, columnaDias.length, 1).setValues(columnaDias);
   }
+}
+
+// ============================================
+// MARCAR BORDES DE LA TABLA (para las filas de la entrada automática)
+// Las filas que entran por la automatización del PDF llegan sin bordes, así
+// que se ven "sueltas" al lado de las cargadas a mano. Esta función aplica a
+// toda la tabla el MISMO borde que usa poblarTareasPredeterminadas
+// (sólido negro en las columnas A:D), para que todas las filas se vean igual.
+// Solo toca bordes: no cambia colores de fondo ni contenido.
+// ============================================
+function marcarBordesTablaCreativo() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
+  if (!hoja) return;
+  
+  var ultimaFila = hoja.getLastRow();
+  if (ultimaFila < 1) return;
+  
+  hoja.getRange(1, 1, ultimaFila, 4)
+    .setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID);
 }
 
 // ============================================
