@@ -111,9 +111,9 @@ var CONFIG = {
   COLOR_AVISO_SUPERPOSICION: '#A2DCF0', // Celeste - celdas de fecha (C:D) de entrada cuando hay superposición
   
   // Colores Pedidos Ya (rojo de marca)
-  PY_COLOR_BARRA: '#EF9A9A',       // Rojo suave - barras del Gantt
-  PY_COLOR_HEADER: '#EF9A9A',      // Header de fechas del timeline (mismo rojo)
-  PY_COLOR_HEADER_TEXT: '#000000', // Texto del header sobre el rojo suave
+  PY_COLOR_BARRA: '#C8102E',       // Rojo fuerte de marca - barras del Gantt
+  PY_COLOR_HEADER: '#C8102E',      // Header (mismo rojo de marca)
+  PY_COLOR_HEADER_TEXT: '#FFFFFF', // Texto blanco sobre el rojo fuerte
   
   // Colores Mercado Pago - Gantt
   MP_COLOR_AGRUPADOR_CREATIVO: '#CC0000',       // Rojo - Desarrollo Creativo
