@@ -5845,11 +5845,16 @@ function procesarMensajeBot(mensajeUsuario) {
     return { tipo: 'texto', contenido: '❌ Error al comunicar con Gemini.' };
   }
   
-  // Intentar parsear como JSON (acción)
-  try {
-    var jsonMatch = respuestaGemini.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      var accion = JSON.parse(jsonMatch[0]);
+  // Intentar parsear como JSON (acción).
+  // Se limpian los fences de markdown (```json) que el modelo suele agregar y
+  // se recorta desde la primera { hasta la última }, para tolerar texto extra.
+  var limpio = respuestaGemini.replace(/```json/gi, '').replace(/```/g, '').trim();
+  var ini = limpio.indexOf('{');
+  var fin = limpio.lastIndexOf('}');
+  
+  if (ini !== -1 && fin > ini) {
+    try {
+      var accion = JSON.parse(limpio.substring(ini, fin + 1));
       if (accion.accion) {
         var resultado = ejecutarAccionBot(accion);
         // Guardar ejemplo exitoso para aprendizaje
@@ -5858,9 +5863,16 @@ function procesarMensajeBot(mensajeUsuario) {
         }
         return { tipo: 'accion', contenido: accion.mensaje || 'Ejecutado.', resultado: resultado };
       }
+    } catch(e) {
+      // El JSON vino mal formado o cortado: no mostrar el JSON crudo al usuario.
+      return { tipo: 'texto', contenido: 'No pude completar la acción. Probá de nuevo con una frase más corta, por ejemplo: "DEBRIEF works on August 29".' };
     }
-  } catch(e) {
-    // No es JSON, es texto normal
+  }
+  
+  // Si parece una acción pero no se pudo cerrar el JSON (respuesta truncada),
+  // tampoco se muestra el crudo: se pide reformular.
+  if (limpio.indexOf('"accion"') !== -1 || limpio.indexOf('{') === 0) {
+    return { tipo: 'texto', contenido: 'No pude completar la acción. Probá de nuevo, indicando la tarea y la fecha en una sola frase.' };
   }
   
   return { tipo: 'texto', contenido: respuestaGemini };
@@ -5975,7 +5987,7 @@ function llamarGeminiVertexAI(token, systemPrompt, mensajeUsuario) {
     ],
     generationConfig: {
       temperature: 0.3,
-      maxOutputTokens: 1024
+      maxOutputTokens: 4096
     }
   };
   
