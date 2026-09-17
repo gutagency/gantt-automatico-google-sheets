@@ -4942,7 +4942,7 @@ function instalarTriggerSiNoExiste() {
 // Integrado en la library para funcionar en copias dependientes.
 // ============================================
 
-var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Google Sheets. Respondé siempre en español, EXCEPTO si el usuario te escribe en portugués — en ese caso respondé en portugués. Sé directo y ejecutá sin preguntar de más.\n\n' +
+var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Google Sheets. IMPORTANTE: respondé SIEMPRE en el MISMO idioma en que te escribe el usuario. Si te escribe en inglés, respondé en inglés. Si te escribe en portugués, respondé en portugués. Si te escribe en español, respondé en español. Sé directo y ejecutá sin preguntar de más.\n\n' +
   'TABLA: La hoja "Gantt GUT" tiene columnas: A=Actividad, B=Días, C=Fecha Inicio, D=Fecha Fin\n\n' +
   'ACCIONES QUE PODÉS EJECUTAR (respondé SIEMPRE con JSON cuando el usuario pide una acción):\n\n' +
   '1. moverTareaAFecha — Mover una tarea a una fecha específica\n' +
@@ -5004,7 +5004,7 @@ var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Goo
   '- Para usarlas desde acá, decime la etapa y la fecha. Ejemplo: "Cascada inversa en etapa producción desde fecha fin 01 de noviembre".\n' +
   '- CASCADA DESDE CURSOR: Desde el menú del sheet, se ubica el cursor en una celda de Fecha Inicio (col C) o Fecha Fin (col D) de una tarea. Si está en col C, cascadea hacia arriba. Si está en col D, cascadea hacia abajo. Respeta la fila del cursor como ancla fija.\n';
 
-var SYSTEM_PROMPT_PT = 'Você é um assistente que executa ações em um Gantt no Google Sheets. Responda sempre em português. Se o usuário escrever em espanhol, responda em espanhol. Seja direto e execute sem perguntar demais.\n\n' +
+var SYSTEM_PROMPT_PT = 'Você é um assistente que executa ações em um Gantt no Google Sheets. IMPORTANTE: responda SEMPRE no MESMO idioma em que o usuário escreve. Se escrever em inglês, responda em inglês. Se escrever em espanhol, responda em espanhol. Se escrever em português, responda em português. Seja direto e execute sem perguntar demais.\n\n' +
   'TABELA: A aba "Gantt GUT" tem colunas: A=Atividade, B=Dias, C=Data Início, D=Data Fim\n\n' +
   'AÇÕES QUE VOCÊ PODE EXECUTAR (responda SEMPRE com JSON quando o usuário pede uma ação):\n\n' +
   '1. moverTareaAFecha — Mover uma tarefa para uma data específica\n' +
@@ -5069,14 +5069,19 @@ function obtenerSystemPrompt() {
 function obtenerBotHTML() {
   var idioma = obtenerIdiomaSeleccionado();
   var esPT = (idioma === 'portugues');
-  var titulo = esPT ? '🤖 Assistente Gantt' : '🤖 Asistente Gantt';
+  var esEN = (idioma === 'ingles');
+  var titulo = esEN ? '🤖 Gantt Assistant' : esPT ? '🤖 Assistente Gantt' : '🤖 Asistente Gantt';
   var nombre = obtenerNombreUsuarioBot();
-  var saludo = nombre ? (esPT ? 'Olá ' + nombre + '!' : 'Hola ' + nombre + '!') : (esPT ? 'Olá!' : 'Hola!');
-  var greeting = esPT
-    ? saludo + ' Sou seu assistente de Gantt. Posso te ajudar com: 📅 Cascatas: "Cascata inversa na etapa produção desde data fim 01 de novembro" | ➡️ Mover tarefas: "Mova BRIEFING para segunda 06 de julho" | 📏 Duração: "CRIATIVIDADE deve durar 5 dias" | ⚙️ Dia laborável: "SHOOTING trabalha no sábado 26 de julho" | 📊 Gantt: "Gere o Gantt"'
-    : saludo + ' Soy tu asistente de Gantt. Puedo ayudarte con: 📅 Cascadas: "Cascada inversa en etapa producción desde fecha fin 01 de noviembre" | ➡️ Mover tareas: "Mové BRIEF al lunes 06 de julio" | 📏 Duración: "Que CREATIVIDAD dure 5 días" | ⚙️ Día laborable: "SHOOTING trabaja el sábado 26 de julio" | 📊 Gantt: "Generá el Gantt"';
-  var placeholder = esPT ? 'Escreva sua instrução...' : 'Escribí tu instrucción...';
-  var thinking = esPT ? 'Pensando...' : 'Pensando...';
+  var saludo = nombre
+    ? (esEN ? 'Hi ' + nombre + '!' : esPT ? 'Olá ' + nombre + '!' : 'Hola ' + nombre + '!')
+    : (esEN ? 'Hi!' : esPT ? 'Olá!' : 'Hola!');
+  var greeting = esEN
+    ? saludo + ' I\'m your Gantt assistant. I can help you with: 📅 Cascades: "Reverse cascade in the production stage from end date November 1st" | ➡️ Move tasks: "Move BRIEF to Monday July 6th" | 📏 Duration: "Make CREATIVE last 5 days" | ⚙️ Working day: "SHOOTING works on Saturday July 26th" | 📊 Gantt: "Generate the Gantt"'
+    : esPT
+      ? saludo + ' Sou seu assistente de Gantt. Posso te ajudar com: 📅 Cascatas: "Cascata inversa na etapa produção desde data fim 01 de novembro" | ➡️ Mover tarefas: "Mova BRIEFING para segunda 06 de julho" | 📏 Duração: "CRIATIVIDADE deve durar 5 dias" | ⚙️ Dia laborável: "SHOOTING trabalha no sábado 26 de julho" | 📊 Gantt: "Gere o Gantt"'
+      : saludo + ' Soy tu asistente de Gantt. Puedo ayudarte con: 📅 Cascadas: "Cascada inversa en etapa producción desde fecha fin 01 de noviembre" | ➡️ Mover tareas: "Mové BRIEF al lunes 06 de julio" | 📏 Duración: "Que CREATIVIDAD dure 5 días" | ⚙️ Día laborable: "SHOOTING trabaja el sábado 26 de julio" | 📊 Gantt: "Generá el Gantt"';
+  var placeholder = esEN ? 'Type your instruction...' : esPT ? 'Escreva sua instrução...' : 'Escribí tu instrucción...';
+  var thinking = esEN ? 'Thinking...' : 'Pensando...';
 
   return '<!DOCTYPE html>' +
     '<html><head><base target="_top"><style>' +
@@ -5173,7 +5178,9 @@ function obtenerBotHTML() {
 
 function abrirAsistenteAI() {
   var idioma = obtenerIdiomaSeleccionado();
-  var titulo = (idioma === 'portugues') ? '🤖 Assistente Gantt' : '🤖 Asistente Gantt';
+  var titulo = (idioma === 'ingles') ? '🤖 Gantt Assistant'
+    : (idioma === 'portugues') ? '🤖 Assistente Gantt'
+    : '🤖 Asistente Gantt';
   var html = HtmlService.createHtmlOutput(obtenerBotHTML())
     .setWidth(500)
     .setHeight(800);
