@@ -879,21 +879,15 @@ function esModoAutomatico() {
   if (!hoja) return false;
   
   try {
-    var datos = hoja.getDataRange().getValues();
-    for (var i = 0; i < datos.length; i++) {
-      for (var j = 0; j < datos[i].length; j++) {
-        var valor = datos[i][j] ? datos[i][j].toString() : '';
-        if (valor.indexOf('Modo Automático') !== -1 || valor.indexOf('Modo Automatico') !== -1 ||
-            valor.indexOf('Modo Automático') !== -1 || valor.indexOf('Automatic mode') !== -1) {
-          // El checkbox está en la celda inmediatamente a la derecha.
-          var check = hoja.getRange(i + 1, j + 2).getValue();
-          return (check === true);
-        }
-      }
-    }
-    // Fallback: celda fija C6.
-    var checkC6 = hoja.getRange('C6').getValue();
-    return (checkC6 === true);
+    // Fila 6: D6 = Flexible, F6 = Automático (mismo patrón que la fila del idioma).
+    var checkFlexible = hoja.getRange('D6').getValue();
+    var checkAutomatico = hoja.getRange('F6').getValue();
+    
+    // Flexible gana ante cualquier ambigüedad: si está tildado, si no hay
+    // ninguno tildado, o si están los dos. Es el modo seguro, porque no
+    // reacomoda fechas por su cuenta.
+    if (checkFlexible === true) return false;
+    return (checkAutomatico === true);
   } catch (e) {
     return false;
   }
