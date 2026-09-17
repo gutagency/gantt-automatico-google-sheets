@@ -3198,7 +3198,18 @@ function obtenerActividadesProduccion(hoja) {
 // ============================================
 
 function verificarHeadersCreativo(hoja) {
-  var headers = ['Actividad', 'Días', 'Fecha Inicio', 'Fecha Fin', '¿Se trabaja en Día Off?'];
+  // Los títulos de las columnas A:E siguen el idioma seleccionado en
+  // Instrucciones. Nada del código depende de este texto (siempre se usa la
+  // posición de la columna), así que es seguro traducirlos.
+  var idioma = obtenerIdiomaSeleccionado();
+  var headers;
+  if (idioma === 'ingles') {
+    headers = ['Task', 'Days', 'Start Date', 'End Date', 'Works on day off?'];
+  } else if (idioma === 'portugues') {
+    headers = ['Atividade', 'Dias', 'Data Início', 'Data Fim', 'Trabalha-se no Day Off?'];
+  } else {
+    headers = ['Actividad', 'Días', 'Fecha Inicio', 'Fecha Fin', '¿Se trabaja en Día Off?'];
+  }
   
   for (var col = 1; col <= headers.length; col++) {
     var headerActual = hoja.getRange(1, col).getValue();
