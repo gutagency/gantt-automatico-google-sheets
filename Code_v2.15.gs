@@ -4996,6 +4996,17 @@ var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Goo
   '- Si el usuario da la fecha y la tarea en mensajes separados, combiná la info del historial.\n' +
   '- Si solo dice un nombre de tarea sin más contexto, preguntá qué quiere hacer con ella.\n' +
   '- No pidas confirmación en las demás acciones. Ejecutá directo.\n\n' +
+  'EQUIVALENCIAS EN INGLÉS (el usuario puede escribir en inglés; mapealas a las mismas acciones):\n' +
+  '- "reverse cascade", "backward cascade", "cascade up", "run the reverse cascade", "regenerate cascade (reverse)" = cascadaInversaEtapaActual\n' +
+  '- "normal cascade", "forward cascade", "cascade down", "run the normal cascade" = cascadaNormalEtapaActual\n' +
+  '- "move X to <date>" = moverTareaAFecha | "push X N days", "shift X N days" = moverTarea\n' +
+  '- "make X last N days", "set X to N days", "X should take N days" = cambiarDiasTarea\n' +
+  '- "X works on <date>", "<date> will be a working day", "mark <date> as working day" = agregarDayOff\n' +
+  '- "overlap X N days with the next one" = solaparTareas\n' +
+  '- "generate the gantt", "create the gantt", "draw the gantt", "refresh the gantt" = generarGantt\n' +
+  '- REGLA CRÍTICA: si el pedido menciona "cascade" / "cascada", NUNCA uses generarGantt. Es una de las dos cascadas.\n' +
+  '  Si dice sólo "cascade" o "regenerate cascade" sin aclarar dirección, PREGUNTÁ si es inversa (desde la fecha fin) o normal (desde la fecha inicio). No adivines.\n' +
+  '- Fechas en inglés: "Aug 22", "August 22", "22 August", "August 22nd" = 22/08 del año en curso. "next Monday" = calculá la fecha.\n\n' +
   'SI EL USUARIO PREGUNTA CÓMO FUNCIONAN LAS CASCADAS, explicale esto:\n' +
   '- CASCADA INVERSA: Ponés la Fecha Fin en la última tarea de la etapa, y calcula todas las fechas hacia arriba. Cada tarea se ubica secuencialmente (una termina → la anterior termina el día hábil anterior). Útil cuando tenés una fecha de entrega/aire fija.\n' +
   '- CASCADA NORMAL: Ponés la Fecha Inicio en la primera tarea de la etapa, y calcula hacia abajo. Útil cuando sabés cuándo arrancás y querés ver cuándo termina.\n' +
@@ -5178,9 +5189,7 @@ function obtenerBotHTML() {
 
 function abrirAsistenteAI() {
   var idioma = obtenerIdiomaSeleccionado();
-  var titulo = (idioma === 'ingles') ? '🤖 Gantt Assistant'
-    : (idioma === 'portugues') ? '🤖 Assistente Gantt'
-    : '🤖 Asistente Gantt';
+  var titulo = (idioma === 'portugues') ? '🤖 Assistente Gantt' : '🤖 Asistente Gantt';
   var html = HtmlService.createHtmlOutput(obtenerBotHTML())
     .setWidth(500)
     .setHeight(800);
