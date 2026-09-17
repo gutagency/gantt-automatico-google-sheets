@@ -862,44 +862,6 @@ function traducirTextoInstrucciones() {
 }
 
 // ============================================
-// MODO DEL GANTT: FLEXIBLE (default) o AUTOMÁTICO
-// Checkbox en C6 de Instrucciones (etiqueta en B6).
-//   - Sin tildar → Flexible: al editar una fecha o los días se recalcula SOLO
-//     esa fila. Las cascadas se corren a mano desde el menú. Permite dejar
-//     tareas solapadas.
-//   - Tildado → Automático: al editar una fecha o los días, se recascadea el
-//     resto de la etapa hacia abajo. Reacomoda todo solo (y por lo tanto
-//     deshace los solapamientos hechos a mano).
-// Se busca primero por etiqueta (tolera que se mueva de fila) y si no aparece
-// se lee C6 directo.
-// ============================================
-function esModoAutomatico() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var hoja = ss.getSheetByName(CONFIG.HOJA_INSTRUCCIONES);
-  if (!hoja) return false;
-  
-  try {
-    var datos = hoja.getDataRange().getValues();
-    for (var i = 0; i < datos.length; i++) {
-      for (var j = 0; j < datos[i].length; j++) {
-        var valor = datos[i][j] ? datos[i][j].toString() : '';
-        if (valor.indexOf('Modo Automático') !== -1 || valor.indexOf('Modo Automatico') !== -1 ||
-            valor.indexOf('Modo Automático') !== -1 || valor.indexOf('Automatic mode') !== -1) {
-          // El checkbox está en la celda inmediatamente a la derecha.
-          var check = hoja.getRange(i + 1, j + 2).getValue();
-          return (check === true);
-        }
-      }
-    }
-    // Fallback: celda fija C6.
-    var checkC6 = hoja.getRange('C6').getValue();
-    return (checkC6 === true);
-  } catch (e) {
-    return false;
-  }
-}
-
-// ============================================
 // OBTENER IDIOMA SELECCIONADO DESDE INSTRUCCIONES
 // ============================================
 
@@ -3752,19 +3714,6 @@ function onEdit(e) {
           ((e && colIni === cols.dias && e.oldValue !== undefined) ? (e.oldValue + ' → ') : '') + nuevoDias);
       }
       sincronizarFechasDesdeDias(hoja, fila, feriados, cols);
-    }
-  }
-  
-  // MODO AUTOMÁTICO: al cambiar una fecha o los días, recascadear el resto de
-  // la etapa hacia abajo, tomando como ancla la última fila editada. En modo
-  // Flexible (default) esto no corre, así se preservan los solapamientos.
-  // Solo GUT: cascadearHaciaAbajoDesdeFila usa el layout de GUT.
-  if (esGut && (tocoFecha || tocoDias) && esModoAutomatico()) {
-    var recalc = cascadearHaciaAbajoDesdeFila(hoja, filaFin, feriados);
-    formatearFechasCreativo();
-    if (recalc > 0) {
-      SpreadsheetApp.getActiveSpreadsheet().toast(
-        'Modo Automático: ' + recalc + ' tarea(s) siguientes recalculadas.', '🔄', 4);
     }
   }
   
