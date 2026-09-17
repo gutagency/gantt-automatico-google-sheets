@@ -3921,6 +3921,59 @@ function completarDiasFaltantesCreativo() {
 }
 
 // ============================================
+// DIAGNÓSTICO DE DAY OFF: correr a mano (Ejecutar → diagnosticarDayOff) y mirar
+// el Log. Muestra, fila por fila, qué hay en la columna E, si el código logra
+// interpretarlo como fecha, y si esa fecha cae dentro del rango de la tarea.
+// Sirve para ver por qué una cascada no respeta un día marcado como trabajado.
+// ============================================
+function diagnosticarDayOff() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
+  if (!hoja) { Logger.log('NO existe la hoja "' + CONFIG.HOJA_CREATIVO + '"'); return; }
+
+  var feriados = obtenerFeriados();
+  var ultimaFila = hoja.getLastRow();
+  var datos = hoja.getRange(2, 1, ultimaFila - 1, 5).getValues(); // A:E
+
+  Logger.log('Hoja: ' + hoja.getName() + ' | filas de datos: ' + datos.length);
+  Logger.log('Columna E oculta: ' + hoja.isColumnHiddenByUser(5));
+
+  var conExc = 0;
+  for (var i = 0; i < datos.length; i++) {
+    var fila = i + 2;
+    var act = datos[i][0];
+    if (!act || act.toString().trim() === '') continue;
+
+    var colE = datos[i][4];
+    var raw = (colE === '' || colE === null || colE === undefined) ? '(vacío)' : colE.toString();
+    var exc = parsearExcepcionesColE(colE);
+    if (exc.length === 0) continue;   // solo interesan las filas con Day Off
+
+    conExc++;
+    var ini = convertirAFecha(datos[i][2]);
+    var fin = convertirAFecha(datos[i][3]);
+    var detalle = 'Fila ' + fila + ' | "' + act + '" | Dias=' + datos[i][1] +
+      ' | E cruda="' + raw + '" (tipo ' + (typeof colE) + ')' +
+      ' | interpretadas=' + exc.length;
+
+    for (var j = 0; j < exc.length; j++) {
+      var f = exc[j];
+      var fStr = ('0' + f.getDate()).slice(-2) + '/' + ('0' + (f.getMonth() + 1)).slice(-2) + '/' + f.getFullYear();
+      var esHabil = esDiaHabil(f, feriados);
+      var dentroRango = (ini && fin) ? (f >= ini && f <= fin) : false;
+      detalle += '\n     → ' + fStr + ' | ya era día hábil: ' + esHabil +
+        ' | dentro del rango de la tarea: ' + dentroRango;
+      if (esHabil) detalle += '  [no cambia nada: ese día ya era laborable]';
+      if (!dentroRango) detalle += '  [NO SE APLICA: la fecha quedó fuera de Inicio-Fin]';
+    }
+    Logger.log(detalle);
+  }
+
+  if (conExc === 0) Logger.log('>>> Ninguna fila tiene Day Off cargado en la columna E.');
+  else Logger.log('>>> Filas con Day Off: ' + conExc);
+}
+
+// ============================================
 // DIAGNÓSTICO DE MARCA: correr a mano (Ejecutar → diagnosticarMarca) y mirar
 // el Log. Dice qué marca detecta el código y qué hay en los checkboxes
 // C11..C14 de Instrucciones, para saber por qué el Gantt no toma el color.
