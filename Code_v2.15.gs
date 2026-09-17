@@ -5057,6 +5057,8 @@ var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Goo
   '   - Si dice "alargar X y solapar Y días con la siguiente", primero cambiá los días (cambiarDiasTarea) y después solapá.\n\n' +
   '8. agregarDayOff — Marcar que una tarea trabaja un fin de semana o feriado\n' +
   '   Esto escribe las fechas en la columna E (Day Off) de esa tarea.\n' +
+  '   REQUISITO: el parámetro "tarea" debe venir del mensaje del usuario. Si no dijo\n' +
+  '   qué tarea, preguntásela y NO devuelvas JSON en ese turno. Nunca la inventes.\n' +
   '   Ejemplo: "SHOOTING trabaja el sábado 26 de julio"\n' +
   '   Respuesta: {"accion":"agregarDayOff","parametros":{"tarea":"SHOOTING","fechas":["26/07/2026"]},"mensaje":"Marcando 26/07/2026 como día laboral para SHOOTING..."}\n\n' +
   '   Ejemplo: "CREATIVIDAD trabaja el finde del 26 y 27 de julio"\n' +
@@ -5084,6 +5086,11 @@ var SYSTEM_PROMPT_ES = 'Sos un asistente que ejecuta acciones en un Gantt de Goo
   '- "move X to <date>" = moverTareaAFecha | "push X N days", "shift X N days" = moverTarea\n' +
   '- "make X last N days", "set X to N days", "X should take N days" = cambiarDiasTarea\n' +
   '- "X works on <date>", "<date> will be a working day", "mark <date> as working day" = agregarDayOff\n' +
+  '  OJO: agregarDayOff SIEMPRE requiere el nombre de la tarea dicho por el usuario.\n' +
+  '  Si el mensaje NO nombra una tarea (ej. "we will work on 13 sept"), NO devuelvas JSON:\n' +
+  '  respondé con una pregunta corta pidiendo la tarea. PROHIBIDO elegir o adivinar una\n' +
+  '  tarea del estado del sheet, del historial o de los ejemplos. Recién cuando el usuario\n' +
+  '  diga el nombre, devolvés el JSON con esa tarea.\n' +
   '- "overlap X N days with the next one" = solaparTareas\n' +
   '- "generate the gantt", "create the gantt", "draw the gantt", "refresh the gantt" = generarGantt\n' +
   '- REGLA CRÍTICA: si el pedido menciona "cascade" / "cascada", NUNCA uses generarGantt. Es una de las dos cascadas.\n' +
@@ -5855,6 +5862,19 @@ function procesarMensajeBot(mensajeUsuario) {
   if (ini !== -1 && fin > ini) {
     try {
       var accion = JSON.parse(limpio.substring(ini, fin + 1));
+      
+      // Salvaguarda: para agregarDayOff el modelo a veces inventa la tarea
+      // (la toma del estado del sheet) cuando el usuario no la dijo. Si el
+      // nombre de la tarea no aparece en el mensaje del usuario, no se ejecuta:
+      // se le pregunta. Así no se marca un Day Off en la tarea equivocada.
+      if (accion.accion === 'agregarDayOff' && accion.parametros && accion.parametros.tarea) {
+        var tareaPedida = accion.parametros.tarea.toString().toUpperCase().trim();
+        var mensajeUpper = mensajeUsuario.toString().toUpperCase();
+        if (tareaPedida !== '' && mensajeUpper.indexOf(tareaPedida) === -1) {
+          return { tipo: 'texto', contenido: '¿En qué tarea? / For which task?' };
+        }
+      }
+      
       if (accion.accion) {
         var resultado = ejecutarAccionBot(accion);
         // Guardar ejemplo exitoso para aprendizaje
