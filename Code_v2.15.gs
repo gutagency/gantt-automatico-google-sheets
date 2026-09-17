@@ -2888,18 +2888,32 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
     }
   }
 
-  // Encabezados de las columnas de entrada F=Status y G=Responsible
-  hojaCreativo.getRange(1, 6).setValue('Status');
-  hojaCreativo.getRange(1, 7).setValue('Responsible');
-  hojaCreativo.getRange(1, 6, 1, 2).setBackground(CONFIG.COLOR_HEADER);
-  hojaCreativo.getRange(1, 6, 1, 2).setFontColor(CONFIG.COLOR_HEADER_TEXT);
-  hojaCreativo.getRange(1, 6, 1, 2).setFontWeight('bold');
-  
-  if (!fechas || fechas.length === 0) return;
-  
   var marca = obtenerMarcaSeleccionada();
   // Estándar comparte el esquema visual de Mercado Pago.
   var esMercadoPago = (marca === 'mercado_pago' || marca === 'estandar');
+  // Color del header: Pedidos Ya usa el rojo de marca (el mismo de las barras);
+  // el resto de las marcas mantienen el header estándar.
+  var esPedidosYa = (marca === 'pedidos_ya');
+  var fondoHeader = esPedidosYa ? CONFIG.PY_COLOR_HEADER : CONFIG.COLOR_HEADER;
+  var textoHeader = esPedidosYa ? CONFIG.PY_COLOR_HEADER_TEXT : CONFIG.COLOR_HEADER_TEXT;
+  
+  // Encabezados de las columnas de entrada F=Status y G=Responsible
+  hojaCreativo.getRange(1, 6).setValue('Status');
+  hojaCreativo.getRange(1, 7).setValue('Responsible');
+  hojaCreativo.getRange(1, 6, 1, 2).setBackground(fondoHeader);
+  hojaCreativo.getRange(1, 6, 1, 2).setFontColor(textoHeader);
+  hojaCreativo.getRange(1, 6, 1, 2).setFontWeight('bold');
+  
+  // En Pedidos Ya se pinta también el header de las columnas de datos (A:E),
+  // para que toda la fila de títulos quede del mismo rojo de marca.
+  if (esPedidosYa) {
+    hojaCreativo.getRange(1, 1, 1, 5).setBackground(fondoHeader);
+    hojaCreativo.getRange(1, 1, 1, 5).setFontColor(textoHeader);
+    hojaCreativo.getRange(1, 1, 1, 5).setFontWeight('bold');
+  }
+  
+  if (!fechas || fechas.length === 0) return;
+  
   var colInicio = CONFIG.COL_TIMELINE_INICIO; // Columna H (E=Day Off oculto, F=Status, G=Responsible)
   
   // Header de fechas: dos líneas en la MISMA celda (inicial del día de la
@@ -2918,12 +2932,6 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
       : diasSemana[f.getDay()].charAt(0);
     headerFechas.push(inicialDia + '\n' + f.getDate() + ' ' + meses[f.getMonth()]);
   }
-  // Color del header: para Pedidos Ya usa el rojo de la marca (mismo color que
-  // las barras); el resto de las marcas mantienen el header estándar.
-  var esPedidosYa = (marca === 'pedidos_ya');
-  var fondoHeader = esPedidosYa ? CONFIG.PY_COLOR_HEADER : CONFIG.COLOR_HEADER;
-  var textoHeader = esPedidosYa ? CONFIG.PY_COLOR_HEADER_TEXT : CONFIG.COLOR_HEADER_TEXT;
-  
   var rangoHeader = hojaCreativo.getRange(1, colInicio, 1, headerFechas.length);
   rangoHeader.setValues([headerFechas]);
   rangoHeader.setBackground(fondoHeader);
@@ -3036,8 +3044,10 @@ function generarTimelineInline(hojaCreativo, actividadesCreativo, fechas, feriad
     }
   }
   
-  // PASO 3: Marcar en azul las celdas donde 2+ tareas se superponen (solo para ML)
-  if (!esMercadoPago) {
+  // PASO 3: DESACTIVADO. Pintaba de celeste las celdas donde 2+ tareas se
+  // superponen, lo que tapaba el color de marca de las barras (sobre todo el
+  // rojo de Pedidos Ya). Para reactivarlo, cambiar false por !esMercadoPago.
+  if (false) {
     for (var ds = 0; ds < fechas.length; ds++) {
       var fechaSup = fechas[ds];
       if (!esDiaHabil(fechaSup, feriados)) continue;
