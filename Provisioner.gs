@@ -37,10 +37,10 @@ var PROV_CONFIG = {
 
 var PROV_TEMPLATES = [
   {
-    clave: 'gut',
-    nombre: 'GUT — interno (inglés)',
-    templateId: '1_c8_iOp6mE3YAFVU-h0S0AmKBG4P5wRq',
-    prefijo: 'GUT Gantt - Template ',
+    clave: 'generico',
+    nombre: 'Genérico — todos los clientes',
+    templateId: '1cOZz7lZAGJccxUXkWWq7r5-McsQpzur3BwncMF8t-DU',
+    prefijo: 'Gantt - Template ',
     wrapper: 'Wrapper_Gantt_v2.gs'
   },
   {
@@ -74,14 +74,14 @@ function obtenerTemplatePorClave(clave) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🚀 Provisioner')
-    .addItem('➕ Nuevo proyecto — GUT interno (inglés)', 'crearProyectoGut')
+    .addItem('➕ Nuevo proyecto — Genérico (todos los clientes)', 'crearProyectoGenerico')
     .addItem('➕ Nuevo proyecto — São Paulo / Mercado Libre (PT)', 'crearProyectoMeliBrasil')
     .addItem('➕ Nuevo proyecto — São Paulo / All clients (PT)', 'crearProyectoGeneralBrasil')
     .addToUi();
 }
 
 // Un stub por template: los ítems de menú no pueden pasar parámetros.
-function crearProyectoGut() { crearNuevoProyecto('gut'); }
+function crearProyectoGenerico() { crearNuevoProyecto('generico'); }
 function crearProyectoMeliBrasil() { crearNuevoProyecto('meli_brasil'); }
 function crearProyectoGeneralBrasil() { crearNuevoProyecto('general_brasil'); }
 
