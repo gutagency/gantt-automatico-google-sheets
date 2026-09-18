@@ -39,21 +39,21 @@ var PROV_TEMPLATES = [
   {
     clave: 'gut',
     nombre: 'GUT — interno (inglés)',
-    templateId: 'PEGAR_ID_DEL_TEMPLATE_GUT',
+    templateId: '1_c8_iOp6mE3YAFVU-h0S0AmKBG4P5wRq',
     prefijo: 'GUT Gantt - Template ',
     wrapper: 'Wrapper_Gantt_v2.gs'
   },
   {
     clave: 'meli_brasil',
-    nombre: 'Meli Brasil (portugués)',
+    nombre: 'GUT São Paulo — Mercado Libre (portugués)',
     templateId: '1HkBknMmnsGv3l33CvmTRwHDdDJg4f-cPpJgrNo_B0hs',
     prefijo: 'Meli Gantt - Template ',
     wrapper: 'Wrapper_Meli_Brasil.gs'
   },
   {
     clave: 'general_brasil',
-    nombre: 'General Brasil (portugués)',
-    templateId: 'PEGAR_ID_DEL_TEMPLATE_GENERAL_BRASIL',
+    nombre: 'GUT São Paulo — All clients (portugués)',
+    templateId: '1wRtQS0eQ1-dopIN7F8sauVZ0XCKL86tEYACjVSyWvQM',
     prefijo: 'Gantt Brasil - Template ',
     wrapper: 'Wrapper_general_Brasil.gs'
   }
@@ -74,9 +74,9 @@ function obtenerTemplatePorClave(clave) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('🚀 Provisioner')
-    .addItem('➕ Nuevo proyecto — GUT (inglés)', 'crearProyectoGut')
-    .addItem('➕ Nuevo proyecto — Meli Brasil (PT)', 'crearProyectoMeliBrasil')
-    .addItem('➕ Nuevo proyecto — General Brasil (PT)', 'crearProyectoGeneralBrasil')
+    .addItem('➕ Nuevo proyecto — GUT interno (inglés)', 'crearProyectoGut')
+    .addItem('➕ Nuevo proyecto — São Paulo / Mercado Libre (PT)', 'crearProyectoMeliBrasil')
+    .addItem('➕ Nuevo proyecto — São Paulo / All clients (PT)', 'crearProyectoGeneralBrasil')
     .addToUi();
 }
 
