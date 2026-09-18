@@ -20,6 +20,10 @@
 var PROV_CONFIG = {
   FOLDER_PRODUCCION_ID: '13HMLUcFLn8zE7xQf3j_FMr47lSn4176P',
   GANTTLIB_SCRIPT_ID: '16Vg486Y1d_qY6wgh6l4JVY8JUwXmY-esWfnTaB8Miy0ZctZqFnfIA5lb',
+  // Prefijo ÚNICO para todos los templates: la numeración es una sola secuencia
+  // compartida (Template 1, 2, 3...). Qué template se usó se registra en la
+  // columna G del sheet maestro.
+  PREFIJO_TEMPLATE: 'Meli Gantt - Template ',
   SUBFOLDER_ENTRADA: '1) Gantt-pdf-productora-entrada',
   SUBFOLDER_PROCESADOS: '2) Gantt-pdf-productora-procesados Tabla',
   CELDA_URL_ENTRADA: 'C9',  // En tab Instrucciones
@@ -30,7 +34,8 @@ var PROV_CONFIG = {
 // TEMPLATES DISPONIBLES — uno por wrapper
 // Cada template es un spreadsheet maestro que YA tiene pegado su wrapper
 // correspondiente y la librería GanttLib configurada.
-// Cada uno numera sus proyectos de forma independiente, según su prefijo.
+// TODOS comparten la misma numeración (PROV_CONFIG.PREFIJO_TEMPLATE): el
+// nombre del template queda registrado en la columna G del sheet maestro.
 //
 // Para agregar un template nuevo: sumá un objeto acá y un .addItem() en onOpen().
 // ============================================
@@ -40,21 +45,18 @@ var PROV_TEMPLATES = [
     clave: 'generico',
     nombre: 'Genérico — todos los clientes',
     templateId: '1cOZz7lZAGJccxUXkWWq7r5-McsQpzur3BwncMF8t-DU',
-    prefijo: 'Gantt - Template ',
     wrapper: 'Wrapper_Gantt_v2.gs'
   },
   {
     clave: 'meli_brasil',
     nombre: 'GUT São Paulo — Mercado Libre (portugués)',
     templateId: '1HkBknMmnsGv3l33CvmTRwHDdDJg4f-cPpJgrNo_B0hs',
-    prefijo: 'Meli Gantt - Template ',
     wrapper: 'Wrapper_Meli_Brasil.gs'
   },
   {
     clave: 'general_brasil',
     nombre: 'GUT São Paulo — All clients (portugués)',
     templateId: '1wRtQS0eQ1-dopIN7F8sauVZ0XCKL86tEYACjVSyWvQM',
-    prefijo: 'Gantt Brasil - Template ',
     wrapper: 'Wrapper_general_Brasil.gs'
   }
 ];
@@ -104,9 +106,9 @@ function crearNuevoProyecto(claveTemplate) {
     return;
   }
   
-  // 1. Calcular siguiente número, según el prefijo de ESTE template
-  var siguienteNum = obtenerSiguienteNumeroTemplate(tpl.prefijo);
-  var nombreProyecto = tpl.prefijo + siguienteNum;
+  // 1. Calcular siguiente número (secuencia única para todos los templates)
+  var siguienteNum = obtenerSiguienteNumeroTemplate();
+  var nombreProyecto = PROV_CONFIG.PREFIJO_TEMPLATE + siguienteNum;
   
   // Confirmar con el usuario
   var respuesta = ui.alert(
@@ -170,9 +172,11 @@ function crearNuevoProyecto(claveTemplate) {
 // y toma el mayor de ambos para evitar duplicados.
 // ============================================
 
-// prefijo: el de cada template, así cada uno numera de forma independiente
-// (Meli Gantt - Template 4 y GUT Gantt - Template 1 pueden coexistir).
-function obtenerSiguienteNumeroTemplate(prefijo) {
+// Secuencia única compartida por los tres templates: el próximo número es el
+// mayor encontrado (en Drive y en la tabla) más uno, sin importar qué template
+// se haya usado en cada proyecto.
+function obtenerSiguienteNumeroTemplate() {
+  var prefijo = PROV_CONFIG.PREFIJO_TEMPLATE;
   var maxNum = 0;
   
   // Fuente 1: Carpetas en Drive
