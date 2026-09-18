@@ -42,6 +42,10 @@ function onOpen() {
     .addItem('⬆️ Cascata inversa — Recalcular as anteriores (a partir da data selecionada)', 'cascadaInversaMeli')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
+    .addSeparator()
+    // El bot requiere permiso IAM en el proyecto GCP para el dominio del
+    // cliente. Hasta que esté otorgado, se aclara en la etiqueta.
+    .addItem('🤖 AI Assistant (pending to grant access)', 'abrirAsistenteAI')
     .addToUi();
 }
 
