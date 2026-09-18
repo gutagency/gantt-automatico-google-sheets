@@ -42,8 +42,6 @@ function onOpen() {
     .addItem('⬆️ Cascata inversa — Recalcular as anteriores (a partir da data selecionada)', 'cascadaInversaMeli')
     .addSeparator()
     .addItem('📊 Gerar Gantt neste documento', 'generarGanttMeli')
-    .addSeparator()
-    .addItem('🤖 Assistente AI', 'abrirAsistenteAI')
     .addToUi();
 }
 
