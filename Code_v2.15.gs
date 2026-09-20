@@ -862,16 +862,16 @@ function traducirTextoInstrucciones() {
 }
 
 // ============================================
-// MODO DEL GANTT: FLEXIBLE (default) o AUTOMÁTICO
-// Checkbox en C6 de Instrucciones (etiqueta en B6).
-//   - Sin tildar → Flexible: al editar una fecha o los días se recalcula SOLO
-//     esa fila. Las cascadas se corren a mano desde el menú. Permite dejar
-//     tareas solapadas.
-//   - Tildado → Automático: al editar una fecha o los días, se recascadea el
-//     resto de la etapa hacia abajo. Reacomoda todo solo (y por lo tanto
-//     deshace los solapamientos hechos a mano).
-// Se busca primero por etiqueta (tolera que se mueva de fila) y si no aparece
-// se lee C6 directo.
+// MODO DEL GANTT: AUTOMÁTICO (default) o FLEXIBLE
+// Checkboxes en la fila 6 de Instrucciones: D6 = Flexible, F6 = Automático
+// (mismo patrón que la fila del idioma, que usa D/F/H).
+//   - Automático (default): al editar una fecha o los días, se recascadea el
+//     resto de la etapa hacia abajo. Reacomoda todo solo, y por eso deshace
+//     los solapamientos hechos a mano.
+//   - Flexible: al editar una fecha o los días se recalcula SOLO esa fila. Las
+//     cascadas se corren a mano desde el menú. Permite dejar tareas solapadas.
+// Si no hay ninguno tildado, o están los dos, gana Automático. Para trabajar
+// en Flexible hay que tildar D6 explícitamente.
 // ============================================
 function esModoAutomatico() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
