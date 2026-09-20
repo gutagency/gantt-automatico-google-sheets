@@ -883,12 +883,14 @@ function esModoAutomatico() {
     var checkFlexible = hoja.getRange('D6').getValue();
     var checkAutomatico = hoja.getRange('F6').getValue();
     
-    // Flexible gana ante cualquier ambigüedad: si está tildado, si no hay
-    // ninguno tildado, o si están los dos. Es el modo seguro, porque no
-    // reacomoda fechas por su cuenta.
-    if (checkFlexible === true) return false;
-    return (checkAutomatico === true);
+    // AUTOMÁTICO es el default: solo se usa Flexible cuando está tildado de
+    // forma explícita y Automático no. Si no hay ninguno tildado, o si están
+    // los dos, gana Automático.
+    if (checkFlexible === true && checkAutomatico !== true) return false;
+    return true;
   } catch (e) {
+    // Si no se puede leer la configuración, se cae a Flexible: ante un error
+    // es preferible no recalcular fechas por cuenta propia.
     return false;
   }
 }
