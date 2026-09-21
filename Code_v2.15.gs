@@ -4080,6 +4080,77 @@ function diagnosticarDayOff() {
 }
 
 // ============================================
+// DIAGNÓSTICO DE IDIOMA Y TRADUCCIÓN
+// Correr a mano (Ejecutar → diagnosticarIdioma) y mirar el Log.
+// Muestra en qué FILA encontró la etiqueta del idioma, qué hay en los
+// checkboxes de esa fila, qué idioma concluye, y para cada tarea de la hoja
+// si el diccionario tiene traducción y cuál escribiría.
+// ============================================
+function diagnosticarIdioma() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hojaInstr = ss.getSheetByName(CONFIG.HOJA_INSTRUCCIONES);
+  if (!hojaInstr) { Logger.log('NO existe la hoja "' + CONFIG.HOJA_INSTRUCCIONES + '"'); return; }
+
+  // 1. Reproducir la búsqueda de la fila del idioma, mostrando TODAS las
+  //    coincidencias (si hay más de una, el código usa la primera).
+  var datos = hojaInstr.getDataRange().getValues();
+  var coincidencias = [];
+  for (var i = 0; i < datos.length; i++) {
+    for (var j = 0; j < datos[i].length; j++) {
+      var valor = datos[i][j] ? datos[i][j].toString() : '';
+      if (valor.indexOf('Seleccionar idioma') !== -1 || valor.indexOf('Selecionar idioma') !== -1 ||
+          valor.indexOf('Select language') !== -1) {
+        coincidencias.push({ fila: i + 1, col: j + 1, texto: valor });
+      }
+    }
+  }
+
+  Logger.log('=== BÚSQUEDA DE LA ETIQUETA DE IDIOMA ===');
+  if (coincidencias.length === 0) {
+    Logger.log('NO se encontró ninguna etiqueta ("Seleccionar idioma" / "Selecionar idioma" / "Select language").');
+    Logger.log('>>> Por eso obtenerIdiomaSeleccionado() devuelve "espanol" por defecto.');
+  } else {
+    Logger.log('Coincidencias encontradas: ' + coincidencias.length + ' (el código usa la PRIMERA)');
+    for (var c = 0; c < coincidencias.length; c++) {
+      var co = coincidencias[c];
+      var d = hojaInstr.getRange(co.fila, 4).getValue();
+      var f = hojaInstr.getRange(co.fila, 6).getValue();
+      var h = hojaInstr.getRange(co.fila, 8).getValue();
+      Logger.log((c === 0 ? '>>> USADA  ' : '    ignorada ') +
+        'fila ' + co.fila + ', col ' + co.col + ' | texto="' + co.texto + '"' +
+        ' | D' + co.fila + '=' + d + ' | F' + co.fila + '=' + f + ' | H' + co.fila + '=' + h);
+    }
+  }
+
+  var idioma = obtenerIdiomaSeleccionado();
+  Logger.log('>>> IDIOMA DETECTADO: ' + idioma);
+  Logger.log('>>> MARCA DETECTADA: ' + obtenerMarcaSeleccionada());
+
+  // 2. Revisar las tareas de la hoja contra el diccionario del idioma destino.
+  var hoja = ss.getSheetByName(CONFIG.HOJA_CREATIVO);
+  if (!hoja) { Logger.log('NO existe la hoja "' + CONFIG.HOJA_CREATIVO + '"'); return; }
+  var ultimaFila = hoja.getLastRow();
+  if (ultimaFila < 2) { Logger.log('La hoja no tiene tareas.'); return; }
+
+  var dicDestino = (idioma === 'portugues') ? TRADUCCIONES_PT
+    : (idioma === 'ingles') ? TRADUCCIONES_EN : null;
+
+  Logger.log('');
+  Logger.log('=== TAREAS EN LA HOJA (primeras 15) ===');
+  var valores = hoja.getRange(2, 1, Math.min(ultimaFila - 1, 15), 1).getValues();
+  for (var k = 0; k < valores.length; k++) {
+    var act = valores[k][0];
+    if (!act || act.toString().trim() === '') continue;
+    var clave = act.toString().toUpperCase().trim();
+    var tiene = dicDestino ? !!dicDestino[clave] : false;
+    Logger.log('Fila ' + (k + 2) + ' | "' + act + '"' +
+      (dicDestino ? (tiene ? ' | traducción: "' + dicDestino[clave] + '"'
+                           : ' | SIN entrada en el diccionario para esta clave')
+                  : ' | idioma español: no se traduce'));
+  }
+}
+
+// ============================================
 // DIAGNÓSTICO DE MARCA: correr a mano (Ejecutar → diagnosticarMarca) y mirar
 // el Log. Dice qué marca detecta el código y qué hay en los checkboxes
 // C11..C14 de Instrucciones, para saber por qué el Gantt no toma el color.
