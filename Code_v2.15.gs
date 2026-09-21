@@ -911,8 +911,14 @@ function obtenerIdiomaSeleccionado() {
   for (var i = 0; i < datos.length; i++) {
     for (var j = 0; j < datos[i].length; j++) {
       var valor = datos[i][j] ? datos[i][j].toString() : '';
-      if (valor.indexOf('Seleccionar idioma') !== -1 || valor.indexOf('Selecionar idioma') !== -1 ||
-          valor.indexOf('Select language') !== -1) {
+      // Búsqueda TOLERANTE: alcanza con que la celda mencione "idioma" junto a
+      // algún "selec..." (cubre "Seleccionar idioma", "Selecionar o idioma",
+      // "Selecione o idioma", etc.) o "select language" en inglés. Antes se
+      // exigía la frase exacta, y una palabra intercalada como el artículo "o"
+      // hacía que no se encontrara la fila: devolvía español y no traducía.
+      var vLower = valor.toLowerCase();
+      if ((vLower.indexOf('idioma') !== -1 && vLower.indexOf('selec') !== -1) ||
+          vLower.indexOf('select language') !== -1) {
         filaIdioma = i + 1;
         break;
       }
